@@ -30,7 +30,7 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#162e3a;color:#edf8fc
 <header>
 <div class="eyebrow">CODEX × FEISHU · PRIVATE BOT</div>
 <h1>把电脑上的 Codex，接到你的手机</h1>
-<p>Windows / macOS 文字版安装说明 · v0.1.1 · 2026-10-03</p>
+<p>Windows / macOS 文字版安装说明 · v0.1.2 · 2026-10-03</p>
 <span class="pill">已有对话续聊</span><span class="pill">最终答复通知</span><span class="pill">一对一私聊</span>
 <div class="flow"><span>手机飞书发文字</span><span>→ 自己的电脑继续工作</span><span>→ 最终结果回到飞书</span></div>
 </header>
@@ -150,7 +150,7 @@ FEISHU_APP_SECRET=这里粘贴你自己的AppSecret</code></pre>
 <pre><code>/绑定 这里换成本次启动显示的绑定码</code></pre>
 <p>收到“绑定成功”后，按顺序发送：</p>
 <div class="table"><table><thead><tr><th>发给机器人</th><th>应该看到什么</th></tr></thead><tbody>
-<tr><td><code>/状态</code></td><td>“桥接运行中”。首次显示“当前聊天：未选择”是正常的。</td></tr>
+<tr><td><code>/状态</code></td><td>“桥接运行中”，并显示对话锁定开关。首次显示“默认聊天：未选择”是正常的。</td></tr>
 <tr><td><code>/会话</code></td><td>电脑上已有聊天的名称和编号。</td></tr>
 <tr><td><code>/切换 2</code></td><td>“已选择原聊天”。把 2 换成你实际想选的编号。</td></tr>
 <tr><td>请只回复：手机控制测试成功。</td><td>电脑的原聊天收到指令，手机稍后收到最终答复。</td></tr>
@@ -164,12 +164,16 @@ FEISHU_APP_SECRET=这里粘贴你自己的AppSecret</code></pre>
 <tr><td>坐在电脑前，暂时不想收推送</td><td>手机发送 <code>/静音</code>，仍可给机器人发指令。</td></tr>
 <tr><td>恢复自动结果通知</td><td>手机发送 <code>/通知</code>，不补发静音期间的旧结果。</td></tr>
 <tr><td>完全关闭</td><td>手机发送 <code>/关闭</code>；或 Windows 双击 <strong>4-停止机器人.cmd</strong>、Mac 在另一个终端运行 <code>bash ./4-停止机器人.command</code>。之后需要回电脑才能重启。</td></tr>
-<tr><td>切换默认聊天</td><td>先 <code>/会话</code>，再 <code>/切换 编号</code>。后续直接发文字会进入选中的原聊天。</td></tr>
-<tr><td>针对某条结果继续提要求</td><td>在飞书长按那条结果，选择<strong>回复</strong>再发文字，只将这条指令发回对应聊天。</td></tr>
+<tr><td>切换默认聊天</td><td>先 <code>/会话</code>，再 <code>/切换 编号</code>。直接发文字会进入选中的原聊天；锁定时锁定目标也跟随切换。</td></tr>
+<tr><td>只接收和操作当前聊天</td><td><code>/锁定</code>。开关会记住，可用 <code>/状态</code> 查看。</td></tr>
+<tr><td>恢复多对话通知与引用回复</td><td><code>/解锁</code>。默认聊天保持不变，不补发锁定期间的旧结果。</td></tr>
+<tr><td>针对某条结果继续提要求</td><td>在飞书长按那条结果，选择<strong>回复</strong>再发文字。解锁时进入对应聊天；锁定时拒绝其他聊天的引用，需先解锁或切换。</td></tr>
 <tr><td>主动看当前聊天最近的结果</td><td><code>/结果</code></td></tr>
 <tr><td>忘记了命令</td><td><code>/帮助</code></td></tr>
 </tbody></table></div>
-<div class="hint"><strong>多个聊天会同时通知。</strong>假设默认选了对话 2，又收到对话 1 的结果：直接输入文字仍发给对话 2；引用对话 1 的结果回复，才会发给对话 1。引用回复不会改变默认选择。</div>
+<div class="hint"><strong>默认解锁，多个聊天都会通知。</strong>假设默认选了对话 2，又收到对话 1 的结果：直接输入文字仍发给对话 2；引用对话 1 的结果回复，才会发给对话 1。引用回复不会改变默认选择。开启 <code>/锁定</code> 后，仅接收和操作当前选中的对话。</div>
+<p>锁定时只轮询选中的聊天；手动 <code>/会话</code> 仍可列出名称供切换。开启锁定会丢弃其他聊天尚未发送的消息；改变通知范围后只通知此后完成的结果，不补发暂停期间的历史结果。已发出的网络请求仍可能送达。</p>
+<p>对话锁定与 <code>/静音</code> 独立：解锁不取消静音，恢复通知也不取消锁定。旧版升级后默认解锁；更新文件后请停止并重启机器人，保留自己的配置和绑定数据。</p>
 <p>电脑需要保持联网、不休眠，Codex 与桥接都运行。本包没有开机自动启动。关闭桥接不会关闭 Codex，也不会中断已经交给 Codex 的工作。</p>
 <p>如果任务停在权限审批，需要在桌面 Codex 或 <a href="https://learn.chatgpt.com/docs/remote-connections">官方 Codex Remote</a> 中处理。此版不会自动替你同意审批。手机图片、语音、附件暂不处理。</p>
 </section>
@@ -182,7 +186,7 @@ FEISHU_APP_SECRET=这里粘贴你自己的AppSecret</code></pre>
 <details><summary>Codex 连接失败，或者 setup:codex 缺少连接信息</summary><p>确保打开的是支持本机工具的 Codex 桌面应用。把这个桥接文件夹作为项目，让该项目里的 Codex 执行连接配置和 doctor。若提示找不到 codex-app-tools 或所需工具，说明当前安装不兼容；先检查应用和工具是否可用，不要复制别人的连接配置或修改安装文件绕过。</p></details>
 <details><summary>重启电脑 / Codex 后机器人不能用了</summary><p>打开 Codex，先停止旧桥接，在本项目聊天里让 Codex 重新执行 <code>npm run setup:codex</code> 和 <code>npm run doctor</code>，成功后再双击启动。自己的绑定记录会保留。</p></details>
 <details><summary>显示机器人已经运行，或者我开了多个启动窗口</summary><p>先双击“4-停止机器人.cmd”，等原运行窗口显示关闭后再启动一次。每个应用只运行一个本工具实例，避免多个实例分走手机消息。</p></details>
-<details><summary>找不到旧聊天 / 停机时发出的消息没有补处理</summary><p>列表检查最近 50 个非置顶本地聊天及全部置顶聊天，也会持续检查手动选过的聊天。旧聊天先在桌面打开或置顶，再发 <code>/会话</code>。重新启动会跳过停机期间的指令和旧通知，这是避免过时指令突然执行的设计。</p></details>
+<details><summary>找不到旧聊天 / 停机时发出的消息没有补处理</summary><p>解锁时检查最近 50 个非置顶本地聊天、全部置顶聊天、默认聊天和手动选过的聊天，锁定时只检查当前选中的聊天。旧聊天先在桌面打开或置顶，再发 <code>/会话</code>。重新启动会跳过停机期间的指令和旧通知，这是避免过时指令突然执行的设计。</p></details>
 <details><summary>提示指令可能已送达，或状态里出现待核对指令</summary><p>网络超时后不能确定 Codex 是否已收到指令，程序不会自动重发。先打开原聊天核对，再决定是否发送新指令。</p></details>
 <details><summary>Mac 自动识别失败，可以修改配置吗</summary><p>可以重新运行第二个脚本打开 <code>bridge.config.json</code>，按上文填写自己的安装路径。缺少当前会话连接信息或 Codex 没有提供所需工具时，修改路径不能解决；需要先确认本机 Codex 是否兼容。Mac 实机联调尚未完成，请保留不含密钥的错误提示。</p></details>
 </section>
@@ -206,5 +210,5 @@ FEISHU_APP_SECRET=这里粘贴你自己的AppSecret</code></pre>
 <li><a href="https://github.com/larksuite/node-sdk">飞书官方 Node.js SDK 与长连接</a></li>
 <li><a href="https://learn.chatgpt.com/docs/remote-connections">OpenAI：Codex Remote 连接与审批</a></li>
 </ul></section>
-<footer>Codex 手机助手 · v0.1.1 Windows / macOS 文字版<br>本说明可离线打开，不加载远程字体、图片或统计脚本。</footer>
+<footer>Codex 手机助手 · v0.1.2 Windows / macOS 文字版<br>本说明可离线打开，不加载远程字体、图片或统计脚本。</footer>
 </main></body></html>

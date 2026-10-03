@@ -8,12 +8,15 @@ export const HELP = `Codex 手机助手（仅本人私聊）
 /回复 会话ID 指令 — 指定原聊天发送
 /结果 — 查看当前聊天最近一次最终答复
 /状态 — 查看当前聊天和通知状态
+/锁定 — 仅接收和操作当前选中的聊天
+/解锁 — 恢复多个聊天的通知和引用回复
 /静音 — 暂停自动推送，仍可发指令
 /通知 — 恢复推送，不补发静音期间结果
 /关闭 — 关闭桥接，之后需在电脑重新启动
 
-直接发送文字会进入当前选中的原聊天。
-引用机器人的结果消息再回复，会进入该结果所属聊天。
+默认解锁：多个本地聊天的完成结果都会通知，收到通知不会改变默认聊天。
+直接发文字进入默认聊天；引用某条结果回复则进入该结果所属聊天。
+需要专注一个聊天时先 /锁定，用完 /解锁；开关会保留到下次启动。
 输入 /帮助 再次查看本说明。`;
 
 export class Bridge {
@@ -27,10 +30,12 @@ export class Bridge {
     this.threads = [];
     this.revisions = new Map();
     this.lastRead = new Map();
+    this.scopeEpoch = 0;
     this.closed = false;
     this.polling = false;
     this.processing = false;
     this.sending = false;
+    store.data.chatLocked ??= false;
     // A deliberate restart does not replay yesterday's notifications or phone commands.
     store.data.outbox = [];
     for (const job of store.data.inbox) {
@@ -41,7 +46,8 @@ export class Bridge {
   }
 
   enqueue(text, { threadId = null, notice = false, key = randomUUID() } = {}) {
-    if (this.closed || !this.store.data.owner || (notice && this.store.data.muted)) return;
+    if (this.closed || !this.store.data.owner || (notice && this.store.data.muted)
+      || (this.store.data.chatLocked && threadId && threadId !== this.store.data.activeThread)) return;
     this.store.data.outbox.push({ key, chunks: splitText(text), next: 0, threadId, notice, attempts: 0, retryAt: 0 });
     this.store.save();
   }
@@ -80,7 +86,7 @@ export class Bridge {
       if (!id) throw new Error('编号无效，请先发送 /会话。');
       return id;
     }
-    const ids = new Set([...this.threads.map(t => t.id), ...this.store.data.tracked]);
+    const ids = new Set([...this.threads.map(t => t.id), ...this.store.data.tracked, this.store.data.activeThread].filter(Boolean));
     const matches = [...ids].filter(id => id.startsWith(selector));
     if (matches.length !== 1) throw new Error('会话 ID 不存在或不唯一，请发送 /会话 后选择。');
     return matches[0];
@@ -112,7 +118,23 @@ export class Bridge {
     if (command === '/帮助' || command === '/help' || command === '/start') return this.enqueue(HELP);
     if (command === '/状态') {
       const uncertain = data.inbox.filter(j => j.status === 'uncertain').length;
-      return this.enqueue(`桥接运行中；自动通知：${data.muted ? '已暂停' : '开启'}。\n当前聊天：${data.activeThread ?? '未选择'}\n待核对指令：${uncertain} 条。\n完成结果仅发送最终答复；权限审批仍在 Codex 桌面或 Remote 处理。`);
+      return this.enqueue(`桥接运行中；自动通知：${data.muted ? '已暂停' : '开启'}。\n默认聊天：${data.activeThreadTitle ?? data.activeThread ?? '未选择'}\n对话锁定：${data.chatLocked ? '开启（仅当前选中聊天）' : '关闭（多个本地聊天）'}\n待核对指令：${uncertain} 条。\n完成结果仅发送最终答复；权限审批仍在 Codex 桌面或 Remote 处理。`);
+    }
+    if (command === '/锁定' || command === '/解锁') {
+      if (args.length) throw new Error('用法：/锁定 或 /解锁，不需要额外参数。');
+      const locked = command === '/锁定';
+      if (locked && !data.activeThread) throw new Error('请先 /会话，再 /切换 编号，选择要锁定的聊天。');
+      if (data.chatLocked === locked) return this.enqueue(locked ? '当前已开启对话锁定；发送 /解锁 恢复多对话通知。' : '当前已解锁，多个本地聊天都会通知。');
+      data.chatLocked = locked;
+      this.scopeEpoch++;
+      this.notifyAfter = this.clock();
+      this.revisions.clear();
+      this.lastRead.clear();
+      if (locked) data.outbox = data.outbox.filter(item => !item.threadId || item.threadId === data.activeThread);
+      this.store.save();
+      return this.enqueue(locked
+        ? `已锁定：${data.activeThreadTitle ?? data.activeThread}\n仅接收和操作这个聊天，其他聊天的引用回复会被拒绝。发送 /解锁 恢复。`
+        : '已解锁，恢复多个本地聊天的通知和引用回复；不会补发锁定期间的旧结果。默认聊天保持不变。');
     }
     if (command === '/静音') {
       data.muted = true;
@@ -139,60 +161,90 @@ export class Bridge {
       return this.enqueue(threads.length ? threads.map((t, i) => `${i + 1}. ${t.title}\n${t.id}`).join('\n\n') + '\n\n发送 /切换 编号 选择。' : '没有找到本地 Codex 聊天。');
     }
     if (command === '/切换') {
-      if (!args[0]) throw new Error('用法：/切换 编号或会话ID');
+      if (args.length !== 1) throw new Error('用法：/切换 编号或会话ID');
       if (!this.threads.length) await this.refreshThreads();
       const id = this.resolveThread(args[0]);
       const result = await this.codex.read(id);
+      if (this.closed) return;
+      if (data.chatLocked) {
+        this.scopeEpoch++;
+        this.notifyAfter = this.clock();
+        this.revisions.clear();
+        this.lastRead.clear();
+      }
       data.activeThread = id;
+      data.activeThreadTitle = result.thread.title;
+      if (data.chatLocked) data.outbox = data.outbox.filter(item => !item.threadId || item.threadId === id);
       if (!data.tracked.includes(id)) data.tracked.push(id);
       this.store.save();
-      return this.enqueue(`已选择原聊天：${result.thread.title}\n${id}\n后续文字会接着这个聊天继续。`, { threadId: id });
+      return this.enqueue(`已选择原聊天：${result.thread.title}\n${data.chatLocked ? '对话锁定已跟随切换，仅接收和操作这个聊天。' : '后续直接发文字会接着这个聊天继续；其他聊天仍会通知，可引用对应结果回复。'}`, { threadId: id });
     }
     if (command === '/结果') {
       if (!data.activeThread) throw new Error('请先发送 /会话，再 /切换 编号。');
-      const result = await this.codex.read(data.activeThread);
+      const threadId = data.activeThread;
+      const result = await this.codex.read(threadId);
       const turn = result.turns?.find(t => t.status === 'completed' && finalText(t));
-      return this.enqueue(turn ? turnNotice(result.thread, turn) : '最近十轮里没有最终答复，请在原聊天查看。', { threadId: data.activeThread });
+      return this.enqueue(turn ? turnNotice(result.thread, turn) : '最近十轮里没有最终答复，请在原聊天查看。', { threadId });
     }
     let threadId, prompt = text;
     if (command === '/回复') {
       if (args.length < 2) throw new Error('用法：/回复 会话ID 指令');
-      if (!this.threads.length) await this.refreshThreads();
-      threadId = this.resolveThread(args[0]);
+      if (data.chatLocked) {
+        if (!data.activeThread || !data.activeThread.startsWith(args[0])) throw new Error('对话锁定已开启；请先 /解锁，或 /切换 到需要回复的聊天。');
+        threadId = data.activeThread;
+      } else {
+        if (!this.threads.length) await this.refreshThreads();
+        threadId = this.resolveThread(args[0]);
+      }
       prompt = text.slice(text.indexOf(args[0]) + args[0].length).trim();
     } else if (command.startsWith('/')) {
       throw new Error('未知命令，发送 /帮助 查看支持的命令。');
     } else if (message.replyTo) {
       threadId = data.routes[message.replyTo];
       if (!threadId) throw new Error('这条引用消息没有关联 Codex 聊天，请使用 /回复 会话ID 指令。');
+      if (data.chatLocked && threadId !== data.activeThread) throw new Error('这条消息属于其他聊天，对话锁定已开启；请先 /解锁 或 /切换。');
     } else threadId = data.activeThread;
     if (!threadId) throw new Error('请先发送 /会话，再 /切换 编号，或引用一条任务结果回复。');
-    await this.codex.read(threadId); // Resolve permissions/existence before sending.
+    const result = await this.codex.read(threadId); // Resolve permissions/existence before sending.
     if (this.closed) return;
     job.sendingToCodex = true;
     job.threadId = threadId;
     this.store.save();
     await this.codex.send(threadId, prompt);
-    this.enqueue(`指令已交给原聊天：${threadId}\n完成后发送最终结果。`, { threadId });
+    this.enqueue(`指令已交给原聊天：${result.thread.title}\n完成后发送最终结果。`, { threadId });
   }
 
   async poll() {
     if (this.polling || this.closed) return;
     this.polling = true;
     try {
-      const listed = await this.refreshThreads();
+      const epoch = this.scopeEpoch;
+      const current = () => !this.closed && epoch === this.scopeEpoch;
+      let listed = [];
+      if (this.store.data.chatLocked) {
+        if (this.store.data.activeThread) listed = [{ id: this.store.data.activeThread }];
+      } else {
+        listed = this.threads;
+        try { listed = await this.refreshThreads(); }
+        catch (error) { this.log(`聊天列表检查失败：${error.message}`); }
+      }
+      if (!current()) return;
       const threads = new Map(listed.map(t => [t.id, t]));
-      for (const id of this.store.data.tracked) if (!threads.has(id)) threads.set(id, { id });
+      for (const id of (this.store.data.chatLocked ? [] : [...this.store.data.tracked, this.store.data.activeThread]).filter(Boolean)) {
+        if (!threads.has(id)) threads.set(id, { id });
+      }
       for (const t of threads.values()) {
-        if (this.closed) break;
+        if (!current()) break;
         const revision = `${t.updatedAt}:${JSON.stringify(t.status)}`;
-        if (t.updatedAt && this.revisions.get(t.id) === revision && t.status !== 'active'
+        const status = typeof t.status === 'string' ? t.status : t.status?.type;
+        if (t.updatedAt && this.revisions.get(t.id) === revision && status !== 'active'
           && this.clock() - (this.lastRead.get(t.id) ?? 0) < 60000) continue;
         try {
           let cursor, pages = 0;
           do {
             const result = await this.codex.read(t.id, cursor);
-            if (this.closed) break;
+            if (!current()) break;
+            if (this.store.data.activeThread === t.id) this.store.data.activeThreadTitle = result.thread.title;
             let reachedPast = false;
             for (const turn of result.turns ?? []) {
               if (!['completed', 'failed', 'interrupted'].includes(turn.status)) continue;
@@ -202,7 +254,8 @@ export class Bridge {
               if (fresh) this.enqueue(turnNotice(result.thread, turn), { threadId: t.id, notice: true, key });
             }
             cursor = !reachedPast && result.page?.hasMore ? result.page.nextCursor : null;
-          } while (cursor && ++pages < 20);
+          } while (current() && cursor && ++pages < 20);
+          if (!current()) break;
           this.store.save();
           this.revisions.set(t.id, revision);
           this.lastRead.set(t.id, this.clock());
@@ -218,7 +271,9 @@ export class Bridge {
       const data = this.store.data;
       const job = data.outbox.find(j => j.retryAt <= this.clock());
       if (!job || !data.owner) return;
-      if (job.notice && data.muted) { data.outbox = data.outbox.filter(j => j !== job); this.store.save(); return; }
+      if ((job.notice && data.muted) || (data.chatLocked && job.threadId && job.threadId !== data.activeThread)) {
+        data.outbox = data.outbox.filter(j => j !== job); this.store.save(); return;
+      }
       try {
         const sendChunk = async () => {
           const id = await this.channel.text(data.owner.chatId, job.chunks[job.next], `${job.key}:${job.next}`);

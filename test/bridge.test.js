@@ -10,7 +10,7 @@ import { normalizeEvent, splitText } from '../src/feishu.js';
 const baseTime = 1790924000000;
 const a = { id: 'aaaaaaaa-1111', title: '原项目 A', kind: 'codex', hostId: 'local', status: 'idle', updatedAt: baseTime / 1000 };
 const b = { ...a, id: 'bbbbbbbb-2222', title: '原项目 B' };
-function fixture(t, { owner = true } = {}) {
+function fixture(t, { owner = true, locked = false } = {}) {
   const root = resolve('.cache', 'tests');
   mkdirSync(root, { recursive: true });
   const dir = mkdtempSync(join(root, 'run-'));
@@ -18,6 +18,7 @@ function fixture(t, { owner = true } = {}) {
   const store = new Store(join(dir, 'state.json'));
   if (owner) store.data.owner = { userId: 'owner', chatId: 'private' };
   store.data.activeThread = a.id;
+  store.data.chatLocked = locked;
   let now = baseTime;
   const sent = [], prompts = [];
   const history = new Map([[a.id, []], [b.id, []]]);
@@ -108,6 +109,19 @@ test('unknown quotes fail closed instead of modifying the selected project', asy
   assert.equal(f.store.data.inbox[0].status, 'failed');
 });
 
+test('chat lock and notification mute are independent controls', async t => {
+  const f = fixture(t);
+  await f.bridge.handle({ text: '/静音' }, {});
+  await f.bridge.handle({ text: '/锁定' }, {});
+  await f.bridge.handle({ text: '/解锁' }, {});
+  assert.equal(f.store.data.muted, true);
+  assert.equal(f.store.data.chatLocked, false);
+  await f.bridge.handle({ text: '/锁定' }, {});
+  await f.bridge.handle({ text: '/通知' }, {});
+  assert.equal(f.store.data.muted, false);
+  assert.equal(f.store.data.chatLocked, true);
+});
+
 test('mute discards queued notices; unmute does not replay old results', async t => {
   const f = fixture(t);
   f.bridge.enqueue('pending old result', { notice: true });
@@ -193,4 +207,169 @@ test('corrupt state fails instead of forgetting the bound owner', t => {
   const f = fixture(t);
   writeFileSync(join(f.dir, 'state.json'), 'broken');
   assert.throws(() => new Store(join(f.dir, 'state.json')), /不会覆盖/);
+});
+
+test('locked mode rejects quotes from a previously selected conversation', async t => {
+  const f = fixture(t, { locked: true });
+  f.store.data.routes['result-a'] = a.id;
+  f.store.data.activeThread = b.id;
+  f.bridge.receive(f.message('接着修改 A', { replyTo: 'result-a' }));
+  await f.bridge.processInbox();
+  assert.equal(f.prompts.length, 0);
+  assert.ok(f.store.data.outbox.some(job => job.chunks.join('').includes('其他聊天')));
+});
+
+test('locked notification polling reads only the selected chat and never searches other chats', async t => {
+  const f = fixture(t, { locked: true }), reads = [];
+  f.codex.list = async () => { throw new Error('automatic listing is forbidden'); };
+  const read = f.codex.read;
+  f.codex.read = async id => { reads.push(id); return read(id); };
+  f.store.data.tracked = [b.id];
+  f.history.set(b.id, [turn('other-result', (baseTime + 1000) / 1000)]);
+  await f.bridge.poll();
+  assert.deepEqual(reads, [a.id]);
+  assert.equal(f.store.data.outbox.length, 0);
+  f.store.data.activeThread = null;
+  await f.bridge.poll();
+  assert.deepEqual(reads, [a.id]);
+});
+
+test('locked explicit reply cannot target a different chat or cause an automatic search', async t => {
+  const f = fixture(t, { locked: true });
+  f.codex.list = async () => { throw new Error('no search'); };
+  f.bridge.receive(f.message(`/回复 ${b.id} continue`)); await f.bridge.processInbox();
+  assert.equal(f.prompts.length, 0);
+  f.bridge.receive(f.message(`/回复 ${a.id} continue`)); await f.bridge.processInbox();
+  assert.deepEqual(f.prompts, [{ threadId: a.id, prompt: 'continue' }]);
+});
+
+test('switching while locked clears previous-chat deliveries and discards an in-flight read', async t => {
+  const f = fixture(t, { locked: true });
+  f.bridge.threads = [a, b];
+  f.bridge.enqueue('old pending result', { threadId: a.id, notice: true });
+  let release;
+  f.codex.read = async id => id === a.id ? new Promise(resolve => { release = resolve; })
+    : { thread: b, turns: [], page: {} };
+  const polling = f.bridge.poll();
+  f.setTime(baseTime + 2000);
+  f.bridge.receive(f.message(`/切换 ${b.id}`)); await f.bridge.processInbox();
+  release({ thread: a, turns: [turn('late-old-chat', (baseTime + 3000) / 1000)], page: {} });
+  await polling;
+  assert.equal(f.store.data.activeThread, b.id);
+  assert.ok(f.store.data.outbox.every(job => job.threadId !== a.id));
+  assert.equal(f.store.data.activeThreadTitle, b.title);
+});
+
+test('unlocked mode notifies multiple chats and replies to quotes without changing the default', async t => {
+  const f = fixture(t);
+  f.history.set(a.id, [turn('a-result', (baseTime + 1000) / 1000)]);
+  f.history.set(b.id, [turn('b-result', (baseTime + 1000) / 1000)]);
+  await f.bridge.poll();
+  while (f.store.data.outbox.length) await f.bridge.flush();
+  assert.equal(f.sent.length, 2);
+  assert.deepEqual(new Set(Object.values(f.store.data.routes)), new Set([a.id, b.id]));
+  const bMessage = Object.entries(f.store.data.routes).find(([, id]) => id === b.id)[0];
+  f.bridge.receive(f.message('继续 B', { replyTo: bMessage })); await f.bridge.processInbox();
+  f.bridge.receive(f.message('直接继续')); await f.bridge.processInbox();
+  f.bridge.receive(f.message(`/回复 ${b.id} 明确回复 B`)); await f.bridge.processInbox();
+  assert.deepEqual(f.prompts, [
+    { threadId: b.id, prompt: '继续 B' }, { threadId: a.id, prompt: '直接继续' }, { threadId: b.id, prompt: '明确回复 B' },
+  ]);
+  assert.equal(f.store.data.activeThread, a.id);
+});
+
+test('unlocked polling includes previously chosen chats outside the recent list and works without a default', async t => {
+  const f = fixture(t), reads = [];
+  f.store.data.activeThread = null;
+  f.store.data.tracked = [a.id];
+  f.codex.list = async () => [b];
+  const read = f.codex.read;
+  f.codex.read = async id => { reads.push(id); return read(id); };
+  f.history.set(a.id, [turn('tracked-result', (baseTime + 1000) / 1000)]);
+  f.history.set(b.id, [turn('listed-result', (baseTime + 1000) / 1000)]);
+  await f.bridge.poll();
+  assert.deepEqual(new Set(reads), new Set([a.id, b.id]));
+  assert.equal(f.store.data.outbox.filter(job => job.notice).length, 2);
+});
+
+test('lock switch discards queued outside results and unlock skips locked-period history', async t => {
+  const f = fixture(t);
+  f.bridge.enqueue('queued B', { threadId: b.id, notice: true });
+  f.bridge.receive(f.message('/锁定')); await f.bridge.processInbox();
+  assert.equal(f.store.data.chatLocked, true);
+  assert.ok(f.store.data.outbox.every(job => job.threadId !== b.id));
+  f.history.set(b.id, [turn('during-lock', (baseTime + 1000) / 1000)]);
+  await f.bridge.poll();
+  f.setTime(baseTime + 2000);
+  f.bridge.receive(f.message('/解锁')); await f.bridge.processInbox();
+  f.history.set(b.id, [turn('after-unlock', (baseTime + 3000) / 1000), ...f.history.get(b.id)]);
+  await f.bridge.poll();
+  assert.equal(f.store.data.chatLocked, false);
+  assert.deepEqual(f.store.data.outbox.filter(job => job.notice).map(job => job.key), [`${b.id}:after-unlock`]);
+  assert.equal(f.store.data.activeThread, a.id);
+});
+
+test('lock preference survives restart while existing users start unlocked', async t => {
+  const f = fixture(t);
+  f.bridge.receive(f.message('/锁定')); await f.bridge.processInbox();
+  let reload = new Store(join(f.dir, 'state.json'));
+  let bridge = new Bridge({ store: reload, codex: f.codex, channel: f.channel, clock: () => baseTime + 1000 });
+  assert.equal(reload.data.chatLocked, true);
+  await bridge.handle({ text: '/解锁' }, {});
+  reload = new Store(join(f.dir, 'state.json'));
+  new Bridge({ store: reload, codex: f.codex, channel: f.channel });
+  assert.equal(reload.data.chatLocked, false);
+  delete reload.data.chatLocked;
+  new Bridge({ store: reload, codex: f.codex, channel: f.channel });
+  assert.equal(reload.data.chatLocked, false);
+});
+
+test('locking requires a selected chat, rejects extra arguments and status exposes the switch', async t => {
+  const f = fixture(t);
+  f.store.data.activeThread = null;
+  await assert.rejects(f.bridge.handle({ text: '/锁定' }, {}), /选择要锁定/);
+  await assert.rejects(f.bridge.handle({ text: '/解锁 extra' }, {}), /不需要额外参数/);
+  f.store.data.activeThread = a.id;
+  await f.bridge.handle({ text: '/锁定' }, {});
+  await f.bridge.handle({ text: '/状态' }, {});
+  assert.ok(f.store.data.outbox.some(job => job.chunks.join('').includes('对话锁定：开启')));
+  await f.bridge.handle({ text: '/解锁' }, {});
+  await f.bridge.handle({ text: '/状态' }, {});
+  assert.ok(f.store.data.outbox.some(job => job.chunks.join('').includes('对话锁定：关闭')));
+});
+
+test('switching while unlocked preserves other-chat deliveries and in-flight results', async t => {
+  const f = fixture(t);
+  f.bridge.threads = [a, b];
+  f.bridge.enqueue('pending A', { threadId: a.id, notice: true });
+  let release;
+  f.codex.read = async id => id === a.id ? new Promise(resolve => { release = resolve; }) : { thread: b, turns: [] };
+  const pending = f.bridge.poll(); await new Promise(resolve => setImmediate(resolve));
+  f.setTime(baseTime + 2000);
+  await f.bridge.handle({ text: `/切换 ${b.id}` }, {});
+  release({ thread: a, turns: [turn('recent-A', (baseTime + 1000) / 1000)], page: {} }); await pending;
+  assert.equal(f.store.data.activeThreadTitle, b.title);
+  assert.equal(f.store.data.outbox.filter(job => job.threadId === a.id && job.notice).length, 2);
+});
+
+test('locking during an outside chat read discards its late result', async t => {
+  const f = fixture(t);
+  f.codex.list = async () => [b];
+  let release;
+  f.codex.read = () => new Promise(resolve => { release = resolve; });
+  const pending = f.bridge.poll(); await new Promise(resolve => setImmediate(resolve));
+  await f.bridge.handle({ text: '/锁定' }, {});
+  release({ thread: b, turns: [turn('late-B', (baseTime + 1000) / 1000)] }); await pending;
+  assert.ok(f.store.data.outbox.every(job => job.threadId !== b.id));
+});
+
+test('unchanged idle chats are cached but active status objects are read on every poll', async t => {
+  const f = fixture(t), reads = [];
+  f.codex.list = async () => [a, { ...b, status: { type: 'active' } }];
+  const read = f.codex.read;
+  f.codex.read = async id => { reads.push(id); return read(id); };
+  await f.bridge.poll(); await f.bridge.poll();
+  assert.deepEqual(reads, [a.id, b.id, b.id]);
+  f.setTime(baseTime + 61000); await f.bridge.poll();
+  assert.deepEqual(reads, [a.id, b.id, b.id, a.id, b.id]);
 });
