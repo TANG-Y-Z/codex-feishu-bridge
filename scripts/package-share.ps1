@@ -5,7 +5,7 @@ $projectRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $package = Get-Content -LiteralPath (Join-Path $projectRoot 'package.json') -Raw -Encoding UTF8 | ConvertFrom-Json
 $version = [string]$package.version
 if ($version -notmatch '^\d+\.\d+\.\d+(?:-[a-zA-Z0-9.-]+)?$') { throw 'Invalid version.' }
-$name = "codex-feishu-bridge-v$version-windows"
+$name = "codex-feishu-bridge-v$version-windows-macos"
 $releaseDir = Join-Path $projectRoot 'releases'
 $destination = Join-Path $releaseDir "$name.zip"
 if (Test-Path -LiteralPath $destination) { throw 'Release already exists. Preserve the original and use a new version for a new release.' }
@@ -34,6 +34,10 @@ foreach ($file in $files) {
     $body = [IO.File]::ReadAllText($target) -replace '\r?\n', "`r`n"
     [IO.File]::WriteAllText($target, $body, [Text.UTF8Encoding]::new($false))
   }
+  if ([IO.Path]::GetExtension($target) -in @('.command', '.sh')) {
+    $body = [IO.File]::ReadAllText($target) -replace '\r\n', "`n"
+    [IO.File]::WriteAllText($target, $body, [Text.UTF8Encoding]::new($false))
+  }
 }
 
 & node (Join-Path $PSScriptRoot 'verify-share.js') $stage
@@ -41,7 +45,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Share content verification failed.' }
 
 $hashes = [ordered]@{}
 foreach ($file in $files) { $hashes[$file] = (Get-FileHash -LiteralPath (Join-Path $stage $file) -Algorithm SHA256).Hash.ToLowerInvariant() }
-$manifest = [ordered]@{ version = $version; platform = 'Windows'; files = $hashes }
+$manifest = [ordered]@{ version = $version; platform = 'Windows / macOS'; files = $hashes }
 $utf8 = [Text.UTF8Encoding]::new($false)
 [IO.File]::WriteAllText((Join-Path $stage 'SHARE-MANIFEST.json'), ($manifest | ConvertTo-Json -Depth 6), $utf8)
 

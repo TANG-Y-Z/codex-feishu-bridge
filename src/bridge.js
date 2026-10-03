@@ -10,7 +10,6 @@ export const HELP = `Codex 手机助手（仅本人私聊）
 /状态 — 查看当前聊天和通知状态
 /静音 — 暂停自动推送，仍可发指令
 /通知 — 恢复推送，不补发静音期间结果
-/预览 — 生成已配置小程序的预览二维码
 /关闭 — 关闭桥接，之后需在电脑重新启动
 
 直接发送文字会进入当前选中的原聊天。
@@ -18,8 +17,8 @@ export const HELP = `Codex 手机助手（仅本人私聊）
 输入 /帮助 再次查看本说明。`;
 
 export class Bridge {
-  constructor({ store, codex, channel, preview, clock = Date.now, log = console.log, stop = () => {} }) {
-    Object.assign(this, { store, codex, channel, preview, clock, log, stop });
+  constructor({ store, codex, channel, clock = Date.now, log = console.log, stop = () => {} }) {
+    Object.assign(this, { store, codex, channel, clock, log, stop });
     this.startedAt = clock();
     this.notifyAfter = this.startedAt;
     this.pairCode = randomBytes(6).toString('hex');
@@ -41,9 +40,9 @@ export class Bridge {
     store.save();
   }
 
-  enqueue(text, { threadId = null, notice = false, image = null, key = randomUUID() } = {}) {
+  enqueue(text, { threadId = null, notice = false, key = randomUUID() } = {}) {
     if (this.closed || !this.store.data.owner || (notice && this.store.data.muted)) return;
-    this.store.data.outbox.push({ key, chunks: splitText(text), next: 0, threadId, notice, image, imageSent: false, attempts: 0, retryAt: 0 });
+    this.store.data.outbox.push({ key, chunks: splitText(text), next: 0, threadId, notice, attempts: 0, retryAt: 0 });
     this.store.save();
   }
 
@@ -155,11 +154,6 @@ export class Bridge {
       const turn = result.turns?.find(t => t.status === 'completed' && finalText(t));
       return this.enqueue(turn ? turnNotice(result.thread, turn) : '最近十轮里没有最终答复，请在原聊天查看。', { threadId: data.activeThread });
     }
-    if (command === '/预览') {
-      this.enqueue('正在为本机配置的小程序生成预览二维码。');
-      const path = await this.preview();
-      return this.enqueue('小程序预览二维码。请使用有该小程序访问权限的微信账号查看。', { image: path });
-    }
     let threadId, prompt = text;
     if (command === '/回复') {
       if (args.length < 2) throw new Error('用法：/回复 会话ID 指令');
@@ -232,11 +226,7 @@ export class Bridge {
           job.next++;
         };
         if (job.next < job.chunks.length) await sendChunk();
-        else if (job.image && !job.imageSent) {
-          await this.channel.image(data.owner.chatId, job.image, `${job.key}:image`);
-          job.imageSent = true;
-        }
-        if (job.next >= job.chunks.length && (!job.image || job.imageSent)) data.outbox = data.outbox.filter(j => j !== job);
+        if (job.next >= job.chunks.length) data.outbox = data.outbox.filter(j => j !== job);
         const routeKeys = Object.keys(data.routes);
         for (const id of routeKeys.slice(0, Math.max(0, routeKeys.length - 5000))) delete data.routes[id];
         this.store.save();

@@ -5,7 +5,7 @@ import { CodexDesktop } from './codex.js';
 import { Store } from './store.js';
 import { Feishu } from './feishu.js';
 import { Bridge } from './bridge.js';
-import { preview } from './preview.js';
+import { loadConnection } from './config.js';
 
 const directory = '.data';
 mkdirSync(directory, { recursive: true });
@@ -45,15 +45,13 @@ process.on('SIGTERM', stop);
 
 try {
   if (!process.env.FEISHU_APP_ID || !process.env.FEISHU_APP_SECRET) throw new Error('请先复制 .env.example 为 .env，并填写飞书 App ID 和 App Secret。');
-  const config = JSON.parse(readFileSync('bridge.local.json', 'utf8'));
+  const config = loadConnection();
   acquireLock();
   client = new McpClient(config);
   await client.connect();
   channel = new Feishu(process.env.FEISHU_APP_ID, process.env.FEISHU_APP_SECRET);
   const store = new Store(join(directory, 'state.json'));
-  bridge = new Bridge({ store, codex: new CodexDesktop(client), channel, stop,
-    preview: () => preview({ devtoolsDir: process.env.WECHAT_DEVTOOLS_DIR, projectPath: process.env.WECHAT_PROJECT_PATH }),
-  });
+  bridge = new Bridge({ store, codex: new CodexDesktop(client), channel, stop });
   console.log('Codex 已连接。正在连接飞书长连接；请在飞书发送 /状态 验证实际收发。');
   if (!store.data.owner) console.log(`首次绑定：在手机私聊机器人发送 /绑定 ${bridge.pairCode}\n绑定码有效期 10 分钟。`);
   await channel.connect(message => bridge.receive(message));

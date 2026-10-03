@@ -15,7 +15,6 @@
   "src/feishu.js",
   "src/main.js",
   "src/mcp-client.js",
-  "src/preview.js",
   "src/store.js",
   "scripts/setup-codex.js",
   "scripts/doctor.js",
@@ -24,5 +23,17 @@
   "scripts/share-files.json",
   "scripts/verify-share.js",
   "scripts/package-share.ps1",
-  "test/bridge.test.js"
+  "test/bridge.test.js",
+  "bridge.config.example.json",
+  ".gitattributes",
+  "Mac-开始使用.txt",
+  "1-安装依赖.command",
+  "2-填写配置.command",
+  "3-启动机器人.command",
+  "4-停止机器人.command",
+  "src/config.js",
+  "src/init-config.js",
+  "scripts/edit-config.js",
+  "scripts/macos-common.sh",
+  "test/config.test.js"
 ]

@@ -42,7 +42,7 @@ export class McpClient {
       if (message.error) pending.reject(new Error(message.error.message));
       else pending.resolve(message.result);
     });
-    await this.request('initialize', { protocolVersion: '2024-11-05', capabilities: {}, clientInfo: { name: 'codex-feishu-bridge', version: '0.1.0' } });
+    await this.request('initialize', { protocolVersion: '2024-11-05', capabilities: {}, clientInfo: { name: 'codex-feishu-bridge', version: '0.1.1' } });
     this.child.stdin.write(JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' }) + '\n');
     const catalog = await this.request('tools/list', {});
     this.tools = new Set(catalog.tools.map(tool => tool.name));

@@ -1,10 +1,11 @@
-import { readFileSync } from 'node:fs';
+import { loadConnection } from '../src/config.js';
 import { McpClient } from '../src/mcp-client.js';
 import { CodexDesktop } from '../src/codex.js';
 
 let client;
 try {
-  const config = JSON.parse(readFileSync('bridge.local.json', 'utf8'));
+  console.log(`环境：${process.platform}/${process.arch}，Node.js ${process.versions.node}。`);
+  const config = loadConnection();
   client = new McpClient(config);
   const threads = await new CodexDesktop(client).list();
   console.log(`Codex 连接成功，检查到 ${threads.length} 个本地聊天。`);

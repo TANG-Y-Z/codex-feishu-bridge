@@ -1,32 +1,91 @@
 # Codex 手机助手 · 飞书私聊桥接
 
-**v0.1.0 · Windows 分享版 · 2026-10-02**
+**v0.1.1 · Windows / macOS 文字版 · 2026-10-03**
 
 用手机飞书接着自己电脑上已有的 Codex 对话发文字指令，完成后收到最终答复。代码和材料仍在自己的电脑上；发给机器人的指令、转发的答复会经过飞书。
 
-首次使用，请在解压后的文件夹中双击 **[先读我.html](先读我.html)**。这是可离线打开的完整说明，包含飞书应用创建、权限、填写 `.env`、连接 Codex、长连接事件、发布、绑定和排错步骤。没有小程序也能使用本版。
+首次使用，请在下载或解压后的文件夹中打开 **[先读我.html](先读我.html)**。这是可离线打开的完整说明，包含飞书应用创建、权限、填写 `.env`、连接 Codex、长连接事件、发布、绑定和排错步骤。Mac 用户也可先看 **[Mac-开始使用.txt](Mac-开始使用.txt)**。本版仅支持文字，不含小程序预览或网页截图。
 
 ## 分享版验证与兼容性
 
-- 已在一台 Windows 电脑完成真实联调：自己的飞书应用、长连接、本人绑定、状态查询、续聊原有 Codex 对话、完成结果回传。18 项核心行为测试通过。
+- 原文字功能已在一台 Windows 电脑完成真实联调：自己的飞书应用、长连接、本人绑定、状态查询、续聊原有 Codex 对话、完成结果回传。测试使用模拟消息，不读取或发送真实聊天内容。
+- 已加入 macOS 配置和启动入口；**尚未在真实 Mac 上完成 Codex 与飞书联调**。Mac 用户需通过 `npm run doctor`，再完成手机收发验证，才能确认自己的环境可用。
 - 尚未在接收者的电脑上验证；不同 Codex 版本的兼容性必须通过 `npm run doctor` 检查。
 - Codex 适配器使用桌面应用自带的 `codex-app-tools` MCP，是**与版本相关的内部集成**，不是承诺稳定的公共 API。本次验证的桌面版本为 26.928.2636.0，插件版本为 0.1.5，Node.js 为 24.14.1。
 - 接收者必须在自己的 Codex 项目聊天中生成 `bridge.local.json`。压缩包不分发任何人的 Codex 连接信息、飞书密钥或绑定记录。
-- `/预览` 仅保留了实验接入代码，真实微信小程序预览尚未联调，不属于本次已验证功能；只用文字功能无需微信开发者工具或图片资源权限。
+- 本版已移除实验性 `/预览` 入口，没有 `/网页截图`，无需微信开发者工具或图片资源权限。保留原版的多聊天通知与引用回复规则。
 
-## 首次配置顺序
+## Windows 首次配置顺序
 
 1. 安装并登录 Windows Codex 桌面应用，确认能正常在本机工作；安装 Node.js 24，准备电脑和手机上的飞书账号。
 2. 完整解压分享包到自己的固定目录。双击 `1-安装依赖.cmd`，等待安装完成。
 3. 在 [飞书开发者后台](https://open.feishu.cn/app) 创建自己的企业自建应用，添加机器人能力。只用文字功能需开通应用身份权限 `im:message:send_as_bot` 和 `im:message.p2p_msg:readonly`。
-4. 双击 `2-填写配置.cmd`。它只在 `.env` 不存在时复制空白模板，并用记事本打开；填写自己的 `FEISHU_APP_ID`、`FEISHU_APP_SECRET`，保存。不要把密钥发到聊天。
+4. 双击 `2-填写配置.cmd`。它只在配置文件不存在时复制模板，并用记事本打开 `.env` 和 `bridge.config.json`；在 `.env` 填写自己的 `FEISHU_APP_ID`、`FEISHU_APP_SECRET`，另一个文件的三个路径通常留空即可。已有配置不会覆盖。不要把密钥发到聊天。
 5. 在 Codex 中打开解压后的项目文件夹，请 Codex 执行 `npm run setup:codex`，再执行 `npm run doctor`。这一步必须由这个项目里的 Codex 执行，不能只在外部终端执行配置命令。
 6. 双击 `3-启动机器人.cmd`，保留窗口。确认打印“飞书长连接已建立”。
 7. 回飞书后台，在“事件与回调 → 事件配置”选择长连接并保存，点“添加事件”添加 **接收消息 `im.message.receive_v1`**。本版不用配置“回调配置”。
 8. 创建版本、设置可用范围包含自己并发布；自动审核通过是正常情况，最终确认显示已发布。
 9. 手机私聊自己的机器人，发送启动窗口中的 `/绑定 绑定码`。绑定码有效 10 分钟，过期需停止后重新启动生成。发送 `/状态`、`/会话`、`/切换 编号`，再发送测试指令完成验证。
 
-## 命令行等价操作
+## Mac 首次配置顺序
+
+1. 安装并登录能够在本机项目中工作的 **Codex 桌面应用**，安装 **Node.js 24**。下载本仓库 ZIP 并完整解压，或用 Git 克隆到固定目录。
+2. 打开“终端”，输入 `cd `（后面有一个空格），把项目文件夹拖进终端，按回车。之后的命令都在这个文件夹里执行。
+3. 依次执行：
+
+   ```bash
+   bash ./1-安装依赖.command
+   bash ./2-填写配置.command
+   ```
+
+4. 第二个脚本会用“文本编辑”打开 `.env` 和 `bridge.config.json`。在 `.env` 填自己的飞书 App ID、App Secret，按 **⌘S** 保存；保持纯文本，不要另存为 `.txt` 或 `.rtf`。`bridge.config.json` 默认留空即可。飞书应用、权限、事件和发布步骤与 Windows 一样，见 `先读我.html`。
+5. 在 Codex 桌面中把本文件夹打开为项目，请该项目里的 Codex 执行 **`npm run setup:codex`**，再执行 **`npm run doctor`**。连接信息由自己的 Mac 自动生成，不可复制 Windows 电脑的 `bridge.local.json`。
+6. 检查通过后回终端执行：
+
+   ```bash
+   bash ./3-启动机器人.command
+   ```
+
+7. 看到“飞书长连接已建立”后，按完整说明保存接收消息事件、发布应用，手机私聊发送 `/绑定 绑定码`。依次验证 `/状态`、`/会话`、`/切换 编号`，再发送“请只回复：手机控制测试成功”。
+
+保持运行终端、Codex 与电脑联网且不休眠。停止可在手机发送 `/关闭`，或在**另一个终端**进入项目目录执行 `bash ./4-停止机器人.command`。
+
+通过 `bash` 运行不依赖文件的可执行权限。如果想双击 `.command`，先在项目终端执行一次 `chmod u+x ./*.command`；从 GitHub 下载的文件仍可能受 macOS 下载文件检查影响，可继续使用上述终端方式，不需要关闭系统安全检查。
+
+若 Node.js 刚安装仍找不到，重新打开终端；如果使用 nvm 等版本管理器，请先在自己的终端激活 Node.js，再执行上述命令。启动脚本会补充常见 Homebrew 的 PATH，但不会替你安装软件。
+
+## 可修改的配置文件
+
+运行 `npm run config`（Windows 也可用 `npm.cmd run config`）会创建并打开下面两个本机文件，已有内容不会覆盖：
+
+| 文件 | 填什么 |
+| --- | --- |
+| `.env` | 自己的 `FEISHU_APP_ID` 和 `FEISHU_APP_SECRET` |
+| `bridge.config.json` | 可选的本机安装路径；模板为 `bridge.config.example.json` |
+
+`bridge.config.json` 默认内容：
+
+```json
+{
+  "codexHome": "",
+  "serverPath": "",
+  "nodePath": ""
+}
+```
+
+| 字段 | 留空时 | 何时需要修改 |
+| --- | --- | --- |
+| `codexHome` | 使用 Codex 提供的 `CODEX_HOME`，否则是当前用户的 `~/.codex` | Codex 数据目录放在其他位置 |
+| `serverPath` | 在 Codex 数据目录的 bundled `codex-app-tools` 缓存中查找 `server.mjs` | 工具不在默认目录时，填写自己的 `server.mjs` 完整路径 |
+| `nodePath` | 使用执行 `setup:codex` 时的 Node.js 可执行文件 | 需要指定固定的 Node.js 安装位置 |
+
+例如 Mac 的 `codexHome` 可以填写 `~/.codex`，`nodePath` 请用 `command -v node` 查看本机实际位置，不要照抄别人的路径。支持 `~/` 和相对于项目文件夹的路径；不展开 `$HOME` 等 shell 表达式。Windows JSON 路径推荐用 `/`，例如 `C:/Tools/nodejs/node.exe`，或将反斜杠写为 `\\`。
+
+三个字段都不需要填写 `Mac` 或 `Windows`；系统自动识别。修改安装路径后，先停止桥接，在本项目的 Codex 聊天里重新执行 `npm run setup:codex`、`npm run doctor`，再启动。修改飞书凭证后也需要重启；更换应用或用户请使用新的独立目录重新绑定。
+
+`bridge.local.json` 是自动生成的当前会话连接信息，**不作为手工配置模板**。连接地址和调用方聊天身份必须来自朋友自己的 Codex 桌面会话；路径配置不能补出当前应用没有提供的工具或连接权限。
+
+## Windows 命令行等价操作
 
 在解压后的项目目录打开 PowerShell。依赖只需首次安装；若 PowerShell 阻止运行 npm.ps1，可使用下面的 `npm.cmd`。
 
@@ -87,7 +146,9 @@ npm.cmd start
 | 文件或目录 | 内容 | 是否分发 |
 | --- | --- | --- |
 | `.env.example` | 空白配置模板 | 是 |
+| `bridge.config.example.json` | 空白安装路径模板 | 是 |
 | `.env` | 自己的飞书 App ID、App Secret | 否 |
+| `bridge.config.json` | 自己修改的本机路径 | 否 |
 | `bridge.local.json` | 当前电脑的 Codex 连接信息 | 否 |
 | `.data/` | 绑定、指令、未送达结果、引用定位 | 否 |
 | `.cache/`、`*.log`、`artifacts/` | 缓存、日志、生成的图片 | 否 |
@@ -100,6 +161,8 @@ powershell -NoProfile -File scripts/package-share.ps1
 ```
 
 输出包含 ZIP、SHA-256 校验文件和归档内的文件清单。打包不读取或转发聊天内容，不修改运行中的桥接状态。
+
+GitHub 源码仓库不保存过期的 `SHARE-MANIFEST.json`；打包时按当前内容重新生成。提交前检查 Git 变更列表，私人配置和运行数据由 `.gitignore` 排除。四个 Mac 脚本随源码提供，PowerShell 打包器仍由 Windows 维护者运行。
 
 ## 官方资料
 

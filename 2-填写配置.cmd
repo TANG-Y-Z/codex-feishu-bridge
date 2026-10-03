@@ -7,9 +7,8 @@ if errorlevel 1 (
   pause
   exit /b 1
 )
-node scripts/init-env.js
+node scripts/edit-config.js
 if errorlevel 1 (
   pause
   exit /b 1
 )
-notepad.exe ".env"

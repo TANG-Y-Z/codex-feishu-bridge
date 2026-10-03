@@ -26,12 +26,18 @@ function fixture(t, { owner = true } = {}) {
     read: async id => ({ thread: id === a.id ? a : b, turns: history.get(id) ?? [], page: {} }),
     send: async (threadId, prompt) => { prompts.push({ threadId, prompt }); return {}; },
   };
-  const channel = { text: async (chatId, text, key) => { sent.push({ chatId, text, key }); return `message-${sent.length}`; }, image: async () => 'image-1' };
-  const bridge = new Bridge({ store, codex, channel, clock: () => now, log() {}, preview: async () => 'preview.png' });
+  const channel = { text: async (chatId, text, key) => { sent.push({ chatId, text, key }); return `message-${sent.length}`; } };
+  const bridge = new Bridge({ store, codex, channel, clock: () => now, log() {} });
   const message = (text, overrides = {}) => ({ id: `incoming-${Math.random()}`, userId: 'owner', chatId: 'private', createdAt: now + 1, text, ...overrides });
   return { store, bridge, sent, prompts, history, codex, channel, message, dir, setTime: value => { now = value; } };
 }
 const turn = (id, completedAt, items = [{ type: 'agentMessage', phase: 'final_answer', text: '最终结果' }]) => ({ id, status: 'completed', completedAt, items });
+
+test('text-only release rejects preview and screenshot commands without sending a Codex prompt', async t => {
+  const f = fixture(t);
+  for (const command of ['/预览', '/网页截图']) await assert.rejects(f.bridge.handle(f.message(command), {}), /未知命令/);
+  assert.equal(f.prompts.length, 0);
+});
 
 test('only marked final answers are extracted; no reasoning, commentary or tool output', () => {
   assert.equal(finalText({ items: [

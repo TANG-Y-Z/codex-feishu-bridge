@@ -52,4 +52,7 @@ for (const path of files) {
 for (const name of allowed) if (!found.has(name)) throw new Error(`Required file is missing: ${name}`);
 const template = parseEnv(readFileSync(join(directory, '.env.example'), 'utf8'));
 if (template.FEISHU_APP_ID !== '' || template.FEISHU_APP_SECRET !== '') throw new Error('Credential template must be blank.');
+const pathsTemplate = JSON.parse(readFileSync(join(directory, 'bridge.config.example.json'), 'utf8'));
+if (Object.keys(pathsTemplate).sort().join(',') !== 'codexHome,nodePath,serverPath'
+  || Object.values(pathsTemplate).some(value => value !== '')) throw new Error('Path configuration template must be blank.');
 console.log(`Share check passed: ${files.length} allowlisted files, blank credentials, no known local secrets or connection identifiers.`);

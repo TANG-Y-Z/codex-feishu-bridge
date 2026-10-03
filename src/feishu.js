@@ -1,5 +1,4 @@
 import * as lark from '@larksuiteoapi/node-sdk';
-import { createReadStream } from 'node:fs';
 import { createHash } from 'node:crypto';
 
 export function splitText(text, maxBytes = 12000) {
@@ -58,19 +57,6 @@ export class Feishu {
         uuid: createHash('sha256').update(deliveryKey).digest('hex').slice(0, 32) },
     });
     if (result.code !== 0 || !result.data?.message_id) throw new Error(`飞书发送失败（${result.code ?? 'unknown'}）。`);
-    return result.data.message_id;
-  }
-
-  async image(chatId, path, deliveryKey) {
-    const upload = await this.client.im.image.create({ data: { image_type: 'message', image: createReadStream(path) } });
-    const imageKey = upload?.image_key ?? upload?.data?.image_key;
-    if (!imageKey) throw new Error('二维码图片上传失败。');
-    const result = await this.client.im.message.create({
-      params: { receive_id_type: 'chat_id' },
-      data: { receive_id: chatId, msg_type: 'image', content: JSON.stringify({ image_key: imageKey }),
-        uuid: createHash('sha256').update(deliveryKey).digest('hex').slice(0, 32) },
-    });
-    if (result.code !== 0 || !result.data?.message_id) throw new Error('二维码发送失败。');
     return result.data.message_id;
   }
 

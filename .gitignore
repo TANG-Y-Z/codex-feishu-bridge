@@ -1,6 +1,9 @@
 node_modules/
 .env
 bridge.local.json
+bridge.config.json
+.DS_Store
+._*
 .data/
 .cache/
 artifacts/

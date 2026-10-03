@@ -30,26 +30,39 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#162e3a;color:#edf8fc
 <header>
 <div class="eyebrow">CODEX × FEISHU · PRIVATE BOT</div>
 <h1>把电脑上的 Codex，接到你的手机</h1>
-<p>Windows 安装与使用说明 · v0.1.0 · 2026-10-02</p>
+<p>Windows / macOS 文字版安装说明 · v0.1.1 · 2026-10-03</p>
 <span class="pill">已有对话续聊</span><span class="pill">最终答复通知</span><span class="pill">一对一私聊</span>
 <div class="flow"><span>手机飞书发文字</span><span>→ 自己的电脑继续工作</span><span>→ 最终结果回到飞书</span></div>
 </header>
 <nav aria-label="目录">
-<a href="#ready">使用前准备</a><a href="#app">创建飞书应用</a><a href="#env">填写密钥</a><a href="#codex">连接 Codex</a><a href="#start">启动</a><a href="#events">事件与发布</a><a href="#pair">绑定验证</a><a href="#daily">日常使用</a><a href="#faq">常见问题</a>
+<a href="#ready">使用前准备</a><a href="#mac">Mac 入口</a><a href="#app">创建飞书应用</a><a href="#env">填写配置</a><a href="#codex">连接 Codex</a><a href="#start">启动</a><a href="#events">事件与发布</a><a href="#pair">绑定验证</a><a href="#daily">日常使用</a><a href="#faq">常见问题</a>
 </nav>
 
 <section id="ready"><h2>先看这里：你需要准备什么</h2>
 <ul>
-<li><strong>一台 Windows 电脑</strong>，已安装并登录 Codex 桌面应用，能正常在本机项目里工作。只有 Codex CLI 或 IDE 扩展不够。</li>
-<li><strong>Node.js 24</strong>：从 <a href="https://nodejs.org/en/download">Node.js 官网</a>下载 Windows 安装程序，保留默认的 npm 和 PATH 选项。已安装该版本可跳过。</li>
+<li><strong>一台 Windows 或 Mac 电脑</strong>，已安装并登录 Codex 桌面应用，能正常在本机项目里工作。只有 Codex CLI 或 IDE 扩展不够。</li>
+<li><strong>Node.js 24</strong>：从 <a href="https://nodejs.org/en/download">Node.js 官网</a>下载对应系统的安装程序。Windows 保留默认的 npm 和 PATH 选项；Mac 安装后重新打开终端。已安装该版本可跳过。</li>
 <li><strong>自己的飞书账号</strong>，电脑和手机登录同一身份。你需要在自己的组织下创建应用，并有权限完成发布。</li>
 <li>把 ZIP <strong>全部解压到固定目录</strong>，例如 <code>D:\Tools\codex-feishu-bridge</code>。不要从压缩包预览窗口直接启动。</li>
 </ul>
-<div class="hint"><strong>没有小程序也完全可以用。</strong>本次分享的是文字指令和最终结果通知功能；不需要微信开发者工具、群聊、公网服务器或 OpenAI API Key。仍使用你自己的 Codex 登录与使用额度。</div>
-<p class="muted">本工具不是 OpenAI 或飞书官方产品。已在一台 Windows 电脑跑通；它依赖 Codex 桌面自带的内部工具，不同版本可能需要适配。后面的连接检查用于确认你的电脑是否兼容。</p>
-<h3>先安装依赖</h3>
+<div class="hint"><strong>本次是纯文字版，不含 /预览 或 /网页截图。</strong>不需要微信开发者工具、群聊、公网服务器或 OpenAI API Key。仍使用你自己的 Codex 登录与使用额度。</div>
+<p class="muted">本工具不是 OpenAI 或飞书官方产品。原文字功能已在一台 Windows 电脑跑通；macOS 已加入配置与启动入口，但尚未实机联调。它依赖 Codex 桌面自带的内部工具，不同版本可能需要适配。请先通过连接检查，再验证手机收发。</p>
+<h3>Windows：先安装依赖</h3>
 <p>双击 <strong>1-安装依赖.cmd</strong>，等待窗口出现 <code>Installation complete</code>。这是安装程序需要用到的库，首次需要联网。看到失败提示时不要继续，先看本文末尾的排错说明。</p>
 <p>双击文件对应的命令是 <code>npm.cmd ci --ignore-scripts</code>。若刚安装 Node.js 后仍提示找不到 node，请关掉该窗口重新双击。</p>
+</section>
+
+<section id="mac"><h2>Mac 用户从这里开始</h2>
+<p>使用同一份代码，Mac 对应 <strong>.command</strong> 文件，Windows 对应 <strong>.cmd</strong> 文件。飞书应用设置、绑定和手机命令相同。</p>
+<ol><li>完整解压或克隆项目。打开“终端”，输入 <code>cd </code>（后面有空格），把项目文件夹拖进终端并按回车。</li>
+<li>安装依赖，再打开本机配置：</li></ol>
+<pre><code>bash ./1-安装依赖.command
+bash ./2-填写配置.command</code></pre>
+<p>第二个脚本会用“文本编辑”打开 <code>.env</code> 和 <code>bridge.config.json</code>。在 <code>.env</code> 填入自己的飞书凭证，按 <strong>⌘S</strong> 保存纯文本；另一个文件的三个路径默认留空即可。具体含义见下面“填写配置”。</p>
+<p>接着按本文完成飞书应用设置，并在本项目的 <strong>Codex 桌面聊天</strong>中让它执行 <code>npm run setup:codex</code> 和 <code>npm run doctor</code>。通过后，回自己的终端启动：</p>
+<pre><code>bash ./3-启动机器人.command</code></pre>
+<p>保持终端窗口打开。停机可在手机发送 <code>/关闭</code>，或另开终端进入项目目录执行 <code>bash ./4-停止机器人.command</code>。</p>
+<p class="muted">用 bash 运行无需文件可执行权限。若希望双击 .command，先在项目终端执行 <code>chmod u+x ./*.command</code>。如果使用 nvm，请先在自己的终端激活 Node.js。详细步骤另见同目录“Mac-开始使用.txt”。</p>
 </section>
 
 <section id="app"><h2><span class="step">1</span>创建你自己的飞书机器人</h2>
@@ -68,37 +81,47 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#162e3a;color:#edf8fc
 <p>只有自己一个人的组织也可以尝试。若“飞书个人版”身份在创建或发布时受限，按飞书提示创建自己的团队；若属于公司的组织，需要管理员允许。最终以后台是否能完成发布、可用范围是否包含你为准。</p>
 </section>
 
-<section id="env"><h2><span class="step">2</span>把 App ID 和 App Secret 填到本机</h2>
+<section id="env"><h2><span class="step">2</span>填写本机凭证与可选路径</h2>
 <p class="path">飞书开发者后台 → 你的应用 → 凭证与基础信息</p>
 <ol>
 <li>找到 <strong>App ID</strong> 和 <strong>App Secret</strong>。这两个值必须来自同一个、由你创建的应用。</li>
-<li>在解压后的文件夹中双击 <strong>2-填写配置.cmd</strong>。它会创建 <code>.env</code> 并用记事本打开；如果文件已存在，会保留原配置。</li>
+<li>Windows 双击 <strong>2-填写配置.cmd</strong>；Mac 在项目终端执行 <code>bash ./2-填写配置.command</code>。会创建并打开 <code>.env</code> 与 <code>bridge.config.json</code>；已有文件会保留原配置。</li>
 <li>在等号右侧填入你自己的值。下面的文字只是格式示例，不能原样使用。</li>
 </ol>
 <pre><code>FEISHU_APP_ID=这里粘贴你自己的AppID
 FEISHU_APP_SECRET=这里粘贴你自己的AppSecret</code></pre>
 <p>App ID 通常以 <code>cli_</code> 开头。每项占一行，不要加中文引号或换行；复制时不要带前后的多余空格。以 <code>#</code> 开头的行是注释，保留即可。</p>
-<ol start="4"><li>按 <strong>Ctrl+S</strong> 保存，再关闭记事本。不要另存为 <code>.env.txt</code>。</li></ol>
+<ol start="4"><li>Windows 按 <strong>Ctrl+S</strong>，Mac 按 <strong>⌘S</strong> 保存，保持纯文本；不要另存为 <code>.env.txt</code> 或富文本。</li></ol>
 <div class="note"><strong>只在自己的电脑上填写。</strong>不要把 App Secret 发给朋友或粘贴到 AI 聊天。朋友各自创建应用、使用自己的凭证；不要多人共用同一套 App ID / Secret。</div>
-<p class="muted">文件里另外两项 <code>WECHAT_…</code> 是后续小程序实验功能的预留配置。本次保留默认值即可，无需安装相关软件。</p>
+<h3>可选：修改 bridge.config.json</h3>
+<p>通常保留下面的空值即可，系统和安装路径会自动识别。不需要填“Mac”或“Windows”。</p>
+<pre><code>{
+  "codexHome": "",
+  "serverPath": "",
+  "nodePath": ""
+}</code></pre>
+<ul><li><code>codexHome</code>：Codex 数据目录，默认使用 Codex 提供的 <code>CODEX_HOME</code>，否则使用当前用户的 <code>~/.codex</code>。</li>
+<li><code>serverPath</code>：自己的 codex-app-tools 插件中 <code>server.mjs</code> 的完整路径，默认自动查找。</li>
+<li><code>nodePath</code>：自己的 Node.js 可执行文件完整路径，默认使用配置连接时运行的 Node。Mac 可用 <code>command -v node</code> 查看位置。</li></ul>
+<p>仅在安装位置特殊时修改。Mac 支持 <code>~/</code>，Windows JSON 路径推荐用 <code>/</code>。修改路径后先停机，在本项目的 Codex 聊天里重新运行 setup:codex 和 doctor，再启动。生成的 <code>bridge.local.json</code> 是当前会话连接信息，不要从另一台电脑复制。</p>
 </section>
 
 <section id="codex"><h2><span class="step">3</span>让自己的 Codex 生成本机连接配置</h2>
 <p>在 Codex 桌面应用里把<strong>解压后的这个文件夹</strong>打开为项目，然后在该项目聊天里粘贴下面这段话：</p>
 <div class="prompt">请配置这个飞书桥接项目与本机 Codex 的连接。先阅读 README.md，然后执行 npm run setup:codex，再执行 npm run doctor。飞书凭证我已在本机 .env 中填写，请不要读取或输出密钥，也不要把任何消息发到其他聊天。暂时不要替我启动常驻机器人，我会用启动文件手动启动。若连接信息不可用或工具不兼容，请说明具体原因，不要修改 Codex 安装文件来绕过。</div>
 <p>成功时会生成 <code>bridge.local.json</code>，并看到类似“Codex 连接成功，检查到 N 个本地聊天”和“读取原聊天成功”的检查结果。</p>
-<div class="note"><strong>这一步必须在这个项目的 Codex 聊天里让 Codex 执行。</strong>直接在外部 PowerShell 运行 <code>npm run setup:codex</code>，可能取不到桌面应用提供的连接信息。不要复制朋友电脑上的 <code>bridge.local.json</code>。</div>
+<div class="note"><strong>这一步必须在这个项目的 Codex 聊天里让 Codex 执行。</strong>直接在外部 PowerShell 或 Mac 终端运行 <code>npm run setup:codex</code>，可能取不到桌面应用提供的连接信息。不要复制朋友电脑上的 <code>bridge.local.json</code>。</div>
 <p>以后重启或更新 Codex，连接地址可能会变。遇到连接失败时，先停止桥接，再重复这一步，最后重新启动。</p>
 </section>
 
 <section id="start"><h2><span class="step">4</span>启动本机桥接，先别关窗口</h2>
-<p>双击 <strong>3-启动机器人.cmd</strong>。第一次成功启动时，窗口会显示：</p>
+<p>Windows 双击 <strong>3-启动机器人.cmd</strong>；Mac 在项目终端执行 <code>bash ./3-启动机器人.command</code>。第一次成功启动时，窗口会显示：</p>
 <pre><code>Codex 已连接。正在连接飞书长连接……
 首次绑定：在手机私聊机器人发送 /绑定 本次生成的绑定码
 绑定码有效期 10 分钟。
 飞书长连接已建立；可以回到开发者后台保存事件订阅。</code></pre>
 <p><strong>看到“飞书长连接已建立”后，再做下一步。</strong>保持这个窗口打开，机器人需要它持续运行。若显示连接失败，先检查前面的配置；不要反复启动多个副本。</p>
-<p class="muted">稍后绑定码若过期，可以双击“4-停止机器人.cmd”，等待启动窗口显示“机器人已关闭”，再重新启动获取新码。已绑定的账号重新启动不需要再次绑定。</p>
+<p class="muted">稍后绑定码若过期，Windows 双击“4-停止机器人.cmd”；Mac 在另一个项目终端执行 <code>bash ./4-停止机器人.command</code>。等待启动窗口显示“机器人已关闭”，再重新启动获取新码。已绑定的账号重新启动不需要再次绑定。</p>
 </section>
 
 <section id="events"><h2><span class="step">5</span>保存长连接事件配置并发布</h2>
@@ -137,10 +160,10 @@ FEISHU_APP_SECRET=这里粘贴你自己的AppSecret</code></pre>
 
 <section id="daily"><h2>以后怎么开、怎么关、怎么继续对话</h2>
 <div class="table"><table><thead><tr><th>想做什么</th><th>操作</th></tr></thead><tbody>
-<tr><td>在电脑上启动</td><td>打开 Codex，再双击 <strong>3-启动机器人.cmd</strong>，保留运行窗口。已有绑定会保留。</td></tr>
+<tr><td>在电脑上启动</td><td>打开 Codex，Windows 双击 <strong>3-启动机器人.cmd</strong>；Mac 运行 <code>bash ./3-启动机器人.command</code>。保留运行窗口，已有绑定会保留。</td></tr>
 <tr><td>坐在电脑前，暂时不想收推送</td><td>手机发送 <code>/静音</code>，仍可给机器人发指令。</td></tr>
 <tr><td>恢复自动结果通知</td><td>手机发送 <code>/通知</code>，不补发静音期间的旧结果。</td></tr>
-<tr><td>完全关闭</td><td>手机发送 <code>/关闭</code>，或电脑双击 <strong>4-停止机器人.cmd</strong>。之后需要回电脑才能重启。</td></tr>
+<tr><td>完全关闭</td><td>手机发送 <code>/关闭</code>；或 Windows 双击 <strong>4-停止机器人.cmd</strong>、Mac 在另一个终端运行 <code>bash ./4-停止机器人.command</code>。之后需要回电脑才能重启。</td></tr>
 <tr><td>切换默认聊天</td><td>先 <code>/会话</code>，再 <code>/切换 编号</code>。后续直接发文字会进入选中的原聊天。</td></tr>
 <tr><td>针对某条结果继续提要求</td><td>在飞书长按那条结果，选择<strong>回复</strong>再发文字，只将这条指令发回对应聊天。</td></tr>
 <tr><td>主动看当前聊天最近的结果</td><td><code>/结果</code></td></tr>
@@ -161,13 +184,14 @@ FEISHU_APP_SECRET=这里粘贴你自己的AppSecret</code></pre>
 <details><summary>显示机器人已经运行，或者我开了多个启动窗口</summary><p>先双击“4-停止机器人.cmd”，等原运行窗口显示关闭后再启动一次。每个应用只运行一个本工具实例，避免多个实例分走手机消息。</p></details>
 <details><summary>找不到旧聊天 / 停机时发出的消息没有补处理</summary><p>列表检查最近 50 个非置顶本地聊天及全部置顶聊天，也会持续检查手动选过的聊天。旧聊天先在桌面打开或置顶，再发 <code>/会话</code>。重新启动会跳过停机期间的指令和旧通知，这是避免过时指令突然执行的设计。</p></details>
 <details><summary>提示指令可能已送达，或状态里出现待核对指令</summary><p>网络超时后不能确定 Codex 是否已收到指令，程序不会自动重发。先打开原聊天核对，再决定是否发送新指令。</p></details>
-<details><summary>帮助里有 /预览，我需要配置吗</summary><p>不用。这是后续小程序功能预留代码，真实项目尚未联调，不属于本次已验证能力。不用小程序时忽略它和 <code>WECHAT_…</code> 配置即可。</p></details>
+<details><summary>Mac 自动识别失败，可以修改配置吗</summary><p>可以重新运行第二个脚本打开 <code>bridge.config.json</code>，按上文填写自己的安装路径。缺少当前会话连接信息或 Codex 没有提供所需工具时，修改路径不能解决；需要先确认本机 Codex 是否兼容。Mac 实机联调尚未完成，请保留不含密钥的错误提示。</p></details>
 </section>
 
 <section id="privacy"><h2>哪些文件不能再转发给别人</h2>
 <p>本包只含代码、空白模板和说明。运行后，下列文件会包含你自己的数据：</p>
 <div class="table"><table><thead><tr><th>文件</th><th>内容</th></tr></thead><tbody>
 <tr><td><code>.env</code></td><td>你的飞书凭证。</td></tr>
+<tr><td><code>bridge.config.json</code></td><td>自己修改的本机安装路径。</td></tr>
 <tr><td><code>bridge.local.json</code></td><td>你这台电脑的 Codex 连接信息。</td></tr>
 <tr><td><code>.data/</code></td><td>绑定用户、手机指令、未送达结果和引用定位记录。</td></tr>
 <tr><td><code>*.log</code>、<code>.cache/</code>、<code>artifacts/</code></td><td>运行日志、缓存和生成文件。</td></tr>
@@ -182,5 +206,5 @@ FEISHU_APP_SECRET=这里粘贴你自己的AppSecret</code></pre>
 <li><a href="https://github.com/larksuite/node-sdk">飞书官方 Node.js SDK 与长连接</a></li>
 <li><a href="https://learn.chatgpt.com/docs/remote-connections">OpenAI：Codex Remote 连接与审批</a></li>
 </ul></section>
-<footer>Codex 手机助手 · v0.1.0 Windows 分享版<br>本说明可离线打开，不加载远程字体、图片或统计脚本。</footer>
+<footer>Codex 手机助手 · v0.1.1 Windows / macOS 文字版<br>本说明可离线打开，不加载远程字体、图片或统计脚本。</footer>
 </main></body></html>

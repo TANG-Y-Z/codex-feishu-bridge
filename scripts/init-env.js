@@ -1,9 +1,10 @@
-import { copyFileSync, constants } from 'node:fs';
+import { initConfig } from '../src/init-config.js';
 
 try {
-  copyFileSync('.env.example', '.env', constants.COPYFILE_EXCL);
-  console.log('已创建 .env。请在本机编辑器中填写你自己的 App ID 和 App Secret。');
+  const created = initConfig();
+  console.log(created.length ? `已创建：${created.join('、')}。` : '配置文件已存在，保留原有内容。');
+  console.log('在 .env 填写自己的 App ID 和 App Secret；bridge.config.json 的路径通常留空即可。');
 } catch (error) {
-  if (error.code !== 'EEXIST') throw error;
-  console.log('.env 已存在，保留原有配置。');
+  console.error(error.message);
+  process.exitCode = 1;
 }

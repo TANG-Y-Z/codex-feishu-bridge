@@ -1,0 +1,68 @@
+Codex 手机助手 · v0.1.1 · Mac 配置与启动
+
+本版只支持文字指令和最终答复通知，不含小程序预览和网页截图。
+已添加 Mac 启动入口与路径配置，但没有在真实 Mac 上完成 Codex / 飞书联调。
+请以你自己的 doctor 检查和手机收发测试为准。
+
+一、准备
+安装并登录 Codex 桌面应用，确认能在本机项目中正常工作。
+安装 Node.js 24：https://nodejs.org/en/download
+下载 GitHub ZIP 后完整解压，或 Git 克隆到固定文件夹。
+
+二、进入项目文件夹
+打开 Mac“终端”，输入 cd 加一个空格，把项目文件夹拖进终端，按回车。
+下面的命令都在项目文件夹里执行，不需要运行 Windows 的 .cmd 文件。
+
+三、安装并填写配置
+bash ./1-安装依赖.command
+bash ./2-填写配置.command
+
+“文本编辑”会打开两个文件：
+  .env：填写自己的 FEISHU_APP_ID 和 FEISHU_APP_SECRET。
+  bridge.config.json：可选路径配置，通常全部留空，让程序自动识别。
+按 ⌘S 保存，保持纯文本，不要另存为 .txt / .rtf，不要使用中文引号。
+之后想改配置，可再次运行第二个脚本；已有内容不会覆盖。
+
+bridge.config.json 的三项：
+  codexHome：Codex 数据目录。默认用 CODEX_HOME 或当前用户的 ~/.codex。
+  serverPath：本机 codex-app-tools/server.mjs 的完整路径。默认自动查找。
+  nodePath：本机 Node.js 的完整路径。默认使用配置连接时的 Node。
+只在自动识别失败或安装位置特殊时修改，不要填 Windows 路径。
+查看 Node 位置可在终端执行 command -v node。
+配置示例与规则详见 README.md 的“可修改的配置文件”。
+
+四、连接自己的 Codex
+在 Codex 中把此文件夹打开为项目，在该项目聊天里发送：
+
+请先阅读 README.md，再执行 npm run setup:codex 和 npm run doctor。
+我已在本机 .env 填写飞书凭证，请不要读取或输出密钥，不要向其他聊天发送消息。
+请只检查连接，暂时不要启动机器人。若连接信息或工具不可用，请说明原因。
+
+必须让该项目中的 Codex 执行，不要只在外部终端执行 setup:codex。
+成功会在本机生成 bridge.local.json。不要使用他人的这个文件。
+修改路径或重启 Codex 后如连接失效，先停桥接，再重做这一段。
+
+五、启动
+回自己的终端执行：
+bash ./3-启动机器人.command
+
+看到“飞书长连接已建立”后，按「先读我.html」完成飞书接收消息事件和发布。
+用手机私聊自己的机器人发送窗口里的 /绑定 绑定码。
+依次验证 /状态、/会话、/切换 编号，再发送一条文字测试指令。
+运行终端保持打开，Codex 与电脑保持联网、不休眠。
+
+六、停止与重启
+手机发 /关闭；或另开一个终端，进入项目目录后执行：
+bash ./4-停止机器人.command
+等机器人显示已关闭，再重新运行第三个脚本。
+暂时不收通知用 /静音，恢复用 /通知，不必停止整个机器人。
+
+七、常见问题
+1. 双击 .command 提示没有权限：直接用上述 bash 命令；若要双击，在项目终端执行一次 chmod u+x ./*.command。
+2. 找不到 Node / npm：重新打开终端；使用 nvm 等工具时先在终端激活 Node 24，再执行脚本。
+3. 找不到 codex-app-tools：确认桌面工具已安装；若位置特殊，在 bridge.config.json 填实际路径，再运行 setup:codex 和 doctor。
+4. 当前 Mac 的 Codex 未提供连接信息或所需工具：路径配置无法解决，请保留不含密钥的错误提示，暂不要启动机器人。
+
+不要上传或分享 .env、bridge.config.json、bridge.local.json、.data、日志。
+这几个文件已被 Git 忽略。朋友各自创建飞书应用，不要共用 App Secret。
+完整的飞书应用创建、权限、事件与发布说明见「先读我.html」。
