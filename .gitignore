@@ -1,0 +1,8 @@
+node_modules/
+.env
+bridge.local.json
+.data/
+.cache/
+artifacts/
+releases/
+*.log

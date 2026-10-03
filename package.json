@@ -1,0 +1,19 @@
+{
+  "name": "codex-feishu-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env src/main.js",
+    "setup:codex": "node scripts/setup-codex.js",
+    "doctor": "node --env-file-if-exists=.env scripts/doctor.js",
+    "test": "node --test",
+    "stop": "node scripts/stop.js"
+  },
+  "dependencies": {
+    "@larksuiteoapi/node-sdk": "1.74.0"
+  }
+}

@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Codex 手机助手 · Windows 安装与使用说明</title>
+<style>
+:root{--ink:#17303c;--muted:#5c707a;--accent:#087d79;--line:#dbe5e8;--paper:#fff;--bg:#f2f6f7}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:24px}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.8 "Segoe UI","Microsoft YaHei",sans-serif}
+main{max-width:1040px;margin:40px auto;padding:0 24px 48px}header{padding:40px;background:#123e49;color:#fff;border-radius:20px}
+.eyebrow{font-size:13px;letter-spacing:.1em;color:#aee4df}h1{font-size:34px;line-height:1.35;margin:12px 0}header p{color:#d6e9ed;margin-bottom:0}
+.pill{display:inline-block;border:1px solid #6d9ca4;border-radius:30px;padding:3px 13px;margin:18px 8px 0 0;font-size:13px}
+nav{display:flex;flex-wrap:wrap;gap:8px;padding:20px 0}nav a{background:#fff;border:1px solid var(--line);padding:6px 12px;border-radius:9px;text-decoration:none}
+a{color:var(--accent);overflow-wrap:anywhere}section{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:30px;margin:0 0 18px}
+h2{font-size:23px;line-height:1.45;margin:0 0 18px}h3{font-size:18px;margin:24px 0 8px}p{margin:10px 0}ul,ol{padding-left:24px}li{margin:6px 0}
+.step{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;font-size:17px;margin-right:10px}
+.hint{background:#edf8f6;border-left:4px solid var(--accent);padding:12px 16px;border-radius:6px;margin:18px 0}
+.note{background:#fff7e5;border-left:4px solid #ce9a33;padding:12px 16px;border-radius:6px;margin:18px 0}.muted{color:var(--muted);font-size:14px}
+code{background:#eef3f5;padding:2px 5px;border-radius:4px;font:14px/1.6 Consolas,"Microsoft YaHei",monospace;overflow-wrap:anywhere}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#162e3a;color:#edf8fc;border-radius:10px;padding:18px;line-height:1.7}pre code{background:transparent;color:inherit;padding:0}
+.table{overflow-x:auto}table{border-collapse:collapse;width:100%;margin:12px 0;font-size:15px}th,td{border-bottom:1px solid var(--line);text-align:left;vertical-align:top;padding:11px 12px}th{background:#f1f6f7}
+.flow{display:flex;gap:8px;flex-wrap:wrap;margin-top:24px}.flow span{padding:8px 12px;border-radius:8px;background:#235460;font-size:14px}.path{font-weight:600;color:#08716d}
+.prompt{border:1px dashed #88bab6;padding:16px;border-radius:10px;background:#f8fcfb}details{border-bottom:1px solid var(--line);padding:13px 0}summary{cursor:pointer;font-weight:600}details p{margin:10px 0 4px}footer{text-align:center;color:var(--muted);font-size:13px;padding-top:16px}
+@media(max-width:600px){main{margin:14px auto;padding:0 12px 24px}header,section{padding:22px}h1{font-size:27px}h2{font-size:21px}th,td{padding:9px 8px}}
+@media print{body{background:white;font-size:11pt}main{max-width:none;margin:0;padding:0}header{background:white;color:var(--ink);padding:12px 0;border-bottom:2px solid var(--accent);border-radius:0}header p,.eyebrow{color:var(--muted)}nav{display:none}section{border:0;border-radius:0;padding:20px 0;margin:0}h2,h3{break-after:avoid}.hint,.note,pre,tr{break-inside:avoid}pre{background:#f2f5f6;color:#17303c}.flow span{background:#edf4f5}.pill{border-color:#aaa}a{color:inherit}details{display:block}}
+</style>
+</head>
+<body><main>
+<header>
+<div class="eyebrow">CODEX × FEISHU · PRIVATE BOT</div>
+<h1>把电脑上的 Codex，接到你的手机</h1>
+<p>Windows 安装与使用说明 · v0.1.0 · 2026-10-02</p>
+<span class="pill">已有对话续聊</span><span class="pill">最终答复通知</span><span class="pill">一对一私聊</span>
+<div class="flow"><span>手机飞书发文字</span><span>→ 自己的电脑继续工作</span><span>→ 最终结果回到飞书</span></div>
+</header>
+<nav aria-label="目录">
+<a href="#ready">使用前准备</a><a href="#app">创建飞书应用</a><a href="#env">填写密钥</a><a href="#codex">连接 Codex</a><a href="#start">启动</a><a href="#events">事件与发布</a><a href="#pair">绑定验证</a><a href="#daily">日常使用</a><a href="#faq">常见问题</a>
+</nav>
+
+<section id="ready"><h2>先看这里：你需要准备什么</h2>
+<ul>
+<li><strong>一台 Windows 电脑</strong>，已安装并登录 Codex 桌面应用，能正常在本机项目里工作。只有 Codex CLI 或 IDE 扩展不够。</li>
+<li><strong>Node.js 24</strong>：从 <a href="https://nodejs.org/en/download">Node.js 官网</a>下载 Windows 安装程序，保留默认的 npm 和 PATH 选项。已安装该版本可跳过。</li>
+<li><strong>自己的飞书账号</strong>，电脑和手机登录同一身份。你需要在自己的组织下创建应用，并有权限完成发布。</li>
+<li>把 ZIP <strong>全部解压到固定目录</strong>，例如 <code>D:\Tools\codex-feishu-bridge</code>。不要从压缩包预览窗口直接启动。</li>
+</ul>
+<div class="hint"><strong>没有小程序也完全可以用。</strong>本次分享的是文字指令和最终结果通知功能；不需要微信开发者工具、群聊、公网服务器或 OpenAI API Key。仍使用你自己的 Codex 登录与使用额度。</div>
+<p class="muted">本工具不是 OpenAI 或飞书官方产品。已在一台 Windows 电脑跑通；它依赖 Codex 桌面自带的内部工具，不同版本可能需要适配。后面的连接检查用于确认你的电脑是否兼容。</p>
+<h3>先安装依赖</h3>
+<p>双击 <strong>1-安装依赖.cmd</strong>，等待窗口出现 <code>Installation complete</code>。这是安装程序需要用到的库，首次需要联网。看到失败提示时不要继续，先看本文末尾的排错说明。</p>
+<p>双击文件对应的命令是 <code>npm.cmd ci --ignore-scripts</code>。若刚安装 Node.js 后仍提示找不到 node，请关掉该窗口重新双击。</p>
+</section>
+
+<section id="app"><h2><span class="step">1</span>创建你自己的飞书机器人</h2>
+<ol>
+<li>打开 <a href="https://open.feishu.cn/app">飞书开发者后台</a>，使用自己的飞书账号登录。</li>
+<li>选择 <strong>创建企业自建应用</strong>，名称可以填“Codex 手机助手”，描述可填“接收电脑 Codex 完成结果，并继续原对话”。</li>
+<li>进入应用，在左侧 <strong>添加应用能力</strong> 中添加 <strong>机器人</strong>。</li>
+<li>打开左侧 <strong>权限管理</strong>，点击开通权限，按下面的标识搜索并开通<strong>应用身份</strong>权限。</li>
+</ol>
+<div class="table"><table><thead><tr><th>搜索这个标识</th><th>权限名称 / 用途</th></tr></thead><tbody>
+<tr><td><code>im:message:send_as_bot</code></td><td>以应用的身份发消息：机器人把结果发给你。</td></tr>
+<tr><td><code>im:message.p2p_msg:readonly</code></td><td>读取用户发给机器人的单聊消息：接收你发出的文字指令。</td></tr>
+</tbody></table></div>
+<p>本次文字功能只需要这两项。没有小程序时不用开通 <code>im:resource</code> 图片资源权限。以后台当前名称为准，可用完整标识准确搜索。</p>
+<div class="hint"><strong>不用建群。</strong>你将与自己创建的机器人一对一聊天。“飞书智能助手”等现成机器人不是本工具；群里的 Webhook 自定义机器人也不适用。</div>
+<p>只有自己一个人的组织也可以尝试。若“飞书个人版”身份在创建或发布时受限，按飞书提示创建自己的团队；若属于公司的组织，需要管理员允许。最终以后台是否能完成发布、可用范围是否包含你为准。</p>
+</section>
+
+<section id="env"><h2><span class="step">2</span>把 App ID 和 App Secret 填到本机</h2>
+<p class="path">飞书开发者后台 → 你的应用 → 凭证与基础信息</p>
+<ol>
+<li>找到 <strong>App ID</strong> 和 <strong>App Secret</strong>。这两个值必须来自同一个、由你创建的应用。</li>
+<li>在解压后的文件夹中双击 <strong>2-填写配置.cmd</strong>。它会创建 <code>.env</code> 并用记事本打开；如果文件已存在，会保留原配置。</li>
+<li>在等号右侧填入你自己的值。下面的文字只是格式示例，不能原样使用。</li>
+</ol>
+<pre><code>FEISHU_APP_ID=这里粘贴你自己的AppID
+FEISHU_APP_SECRET=这里粘贴你自己的AppSecret</code></pre>
+<p>App ID 通常以 <code>cli_</code> 开头。每项占一行，不要加中文引号或换行；复制时不要带前后的多余空格。以 <code>#</code> 开头的行是注释，保留即可。</p>
+<ol start="4"><li>按 <strong>Ctrl+S</strong> 保存，再关闭记事本。不要另存为 <code>.env.txt</code>。</li></ol>
+<div class="note"><strong>只在自己的电脑上填写。</strong>不要把 App Secret 发给朋友或粘贴到 AI 聊天。朋友各自创建应用、使用自己的凭证；不要多人共用同一套 App ID / Secret。</div>
+<p class="muted">文件里另外两项 <code>WECHAT_…</code> 是后续小程序实验功能的预留配置。本次保留默认值即可，无需安装相关软件。</p>
+</section>
+
+<section id="codex"><h2><span class="step">3</span>让自己的 Codex 生成本机连接配置</h2>
+<p>在 Codex 桌面应用里把<strong>解压后的这个文件夹</strong>打开为项目，然后在该项目聊天里粘贴下面这段话：</p>
+<div class="prompt">请配置这个飞书桥接项目与本机 Codex 的连接。先阅读 README.md，然后执行 npm run setup:codex，再执行 npm run doctor。飞书凭证我已在本机 .env 中填写，请不要读取或输出密钥，也不要把任何消息发到其他聊天。暂时不要替我启动常驻机器人，我会用启动文件手动启动。若连接信息不可用或工具不兼容，请说明具体原因，不要修改 Codex 安装文件来绕过。</div>
+<p>成功时会生成 <code>bridge.local.json</code>，并看到类似“Codex 连接成功，检查到 N 个本地聊天”和“读取原聊天成功”的检查结果。</p>
+<div class="note"><strong>这一步必须在这个项目的 Codex 聊天里让 Codex 执行。</strong>直接在外部 PowerShell 运行 <code>npm run setup:codex</code>，可能取不到桌面应用提供的连接信息。不要复制朋友电脑上的 <code>bridge.local.json</code>。</div>
+<p>以后重启或更新 Codex，连接地址可能会变。遇到连接失败时，先停止桥接，再重复这一步，最后重新启动。</p>
+</section>
+
+<section id="start"><h2><span class="step">4</span>启动本机桥接，先别关窗口</h2>
+<p>双击 <strong>3-启动机器人.cmd</strong>。第一次成功启动时，窗口会显示：</p>
+<pre><code>Codex 已连接。正在连接飞书长连接……
+首次绑定：在手机私聊机器人发送 /绑定 本次生成的绑定码
+绑定码有效期 10 分钟。
+飞书长连接已建立；可以回到开发者后台保存事件订阅。</code></pre>
+<p><strong>看到“飞书长连接已建立”后，再做下一步。</strong>保持这个窗口打开，机器人需要它持续运行。若显示连接失败，先检查前面的配置；不要反复启动多个副本。</p>
+<p class="muted">稍后绑定码若过期，可以双击“4-停止机器人.cmd”，等待启动窗口显示“机器人已关闭”，再重新启动获取新码。已绑定的账号重新启动不需要再次绑定。</p>
+</section>
+
+<section id="events"><h2><span class="step">5</span>保存长连接事件配置并发布</h2>
+<p class="path">飞书开发者后台 → 你的应用 → 事件与回调 → 事件配置</p>
+<ol>
+<li>点击“订阅方式”旁边的编辑图标，选择 <strong>使用长连接接收事件</strong> 并保存。若提示“应用未建立长连接”，回到上一步确认本机程序仍在运行。</li>
+<li>在 <strong>已添加事件</strong> 这一行右侧，点击蓝色 <strong>添加事件</strong> 按钮。</li>
+<li>弹窗搜索 <strong>接收消息</strong>，选择标识为 <code>im.message.receive_v1</code> 的事件并添加。名称可能显示“接收消息 v2.0”，这是正常的。</li>
+<li>确认“已添加事件”列表中能看到这项事件。如果提示缺少单聊权限，回“权限管理”开通上文的单聊消息权限。</li>
+</ol>
+<div class="hint"><strong>只配“事件配置”，本版不用配置“回调配置”。</strong>文字消息走接收消息事件；目前没有卡片按钮回调。不需要填写公网回调地址。</div>
+<h3>然后发布</h3>
+<ol>
+<li>左侧打开 <strong>版本管理与发布</strong>，点击创建版本。</li>
+<li>版本号可以填 <code>1.0.0</code>，更新说明填“接收文字指令并发送 Codex 结果”。</li>
+<li><strong>可用范围只选自己</strong>，保存并申请发布。若由你管理组织，可能自动审核通过；公司的组织可能需要管理员审批。</li>
+<li>最终确认应用显示 <strong>已发布 / 已上线</strong>。之后更改权限或事件，也需要再次创建版本发布才能生效。</li>
+</ol>
+</section>
+
+<section id="pair"><h2><span class="step">6</span>在手机私聊绑定并验证</h2>
+<ol>
+<li>手机飞书切到应用所属的同一个组织身份，搜索你创建的机器人名称，例如“Codex 手机助手”，进入一对一私聊。搜索不到时也可从应用详情尝试“打开应用”。</li>
+<li>把启动窗口里显示的 <strong>整条绑定指令</strong>发给机器人。不要发送示例文字，不要把别人的绑定码拿来用。</li>
+</ol>
+<pre><code>/绑定 这里换成本次启动显示的绑定码</code></pre>
+<p>收到“绑定成功”后，按顺序发送：</p>
+<div class="table"><table><thead><tr><th>发给机器人</th><th>应该看到什么</th></tr></thead><tbody>
+<tr><td><code>/状态</code></td><td>“桥接运行中”。首次显示“当前聊天：未选择”是正常的。</td></tr>
+<tr><td><code>/会话</code></td><td>电脑上已有聊天的名称和编号。</td></tr>
+<tr><td><code>/切换 2</code></td><td>“已选择原聊天”。把 2 换成你实际想选的编号。</td></tr>
+<tr><td>请只回复：手机控制测试成功。</td><td>电脑的原聊天收到指令，手机稍后收到最终答复。</td></tr>
+</tbody></table></div>
+<p>这四步都成功，才算完成整条链路验证。机器人只接受完成绑定的这个人的私聊，其他账号、群消息、机器人消息都会被忽略。</p>
+</section>
+
+<section id="daily"><h2>以后怎么开、怎么关、怎么继续对话</h2>
+<div class="table"><table><thead><tr><th>想做什么</th><th>操作</th></tr></thead><tbody>
+<tr><td>在电脑上启动</td><td>打开 Codex，再双击 <strong>3-启动机器人.cmd</strong>，保留运行窗口。已有绑定会保留。</td></tr>
+<tr><td>坐在电脑前，暂时不想收推送</td><td>手机发送 <code>/静音</code>，仍可给机器人发指令。</td></tr>
+<tr><td>恢复自动结果通知</td><td>手机发送 <code>/通知</code>，不补发静音期间的旧结果。</td></tr>
+<tr><td>完全关闭</td><td>手机发送 <code>/关闭</code>，或电脑双击 <strong>4-停止机器人.cmd</strong>。之后需要回电脑才能重启。</td></tr>
+<tr><td>切换默认聊天</td><td>先 <code>/会话</code>，再 <code>/切换 编号</code>。后续直接发文字会进入选中的原聊天。</td></tr>
+<tr><td>针对某条结果继续提要求</td><td>在飞书长按那条结果，选择<strong>回复</strong>再发文字，只将这条指令发回对应聊天。</td></tr>
+<tr><td>主动看当前聊天最近的结果</td><td><code>/结果</code></td></tr>
+<tr><td>忘记了命令</td><td><code>/帮助</code></td></tr>
+</tbody></table></div>
+<div class="hint"><strong>多个聊天会同时通知。</strong>假设默认选了对话 2，又收到对话 1 的结果：直接输入文字仍发给对话 2；引用对话 1 的结果回复，才会发给对话 1。引用回复不会改变默认选择。</div>
+<p>电脑需要保持联网、不休眠，Codex 与桥接都运行。本包没有开机自动启动。关闭桥接不会关闭 Codex，也不会中断已经交给 Codex 的工作。</p>
+<p>如果任务停在权限审批，需要在桌面 Codex 或 <a href="https://learn.chatgpt.com/docs/remote-connections">官方 Codex Remote</a> 中处理。此版不会自动替你同意审批。手机图片、语音、附件暂不处理。</p>
+</section>
+
+<section id="faq"><h2>常见问题</h2>
+<details open><summary>绑定码过期，或者发了绑定指令没反应</summary><p>绑定码从每次启动起有效 10 分钟。先停止并重新启动生成新码，再发完整指令。如果仍没反应，检查应用是否已发布、事件是否包含 <code>im.message.receive_v1</code>、两项权限是否生效、机器人可用范围是否包含自己，以及是否用同一组织身份私聊。</p></details>
+<details open><summary>显示“应用未建立长连接”</summary><p>先填好自己的凭证、完成 Codex 配置并启动本机程序，看到“飞书长连接已建立”后，再回后台保存事件配置。配置先后顺序不能颠倒。</p></details>
+<details open><summary>机器人搜索不到，或者没有聊天输入框</summary><p>确认不是“待上线”，检查应用发布、机器人能力、接收消息事件和可用范围。切换到该应用所属的飞书组织身份，稍后重新打开应用。若已改过权限或事件，要重新发布。</p></details>
+<details><summary>npm / node 找不到，或者依赖安装失败</summary><p>安装 Node.js 24，并重新打开窗口。依赖下载需要联网；安装失败时保留错误提示，排查网络后重新执行“1-安装依赖.cmd”。如果 PowerShell 提示 npm.ps1 不允许运行，可用 <code>npm.cmd</code> 替代 <code>npm</code>，不必改系统执行策略。</p></details>
+<details><summary>Codex 连接失败，或者 setup:codex 缺少连接信息</summary><p>确保打开的是支持本机工具的 Codex 桌面应用。把这个桥接文件夹作为项目，让该项目里的 Codex 执行连接配置和 doctor。若提示找不到 codex-app-tools 或所需工具，说明当前安装不兼容；先检查应用和工具是否可用，不要复制别人的连接配置或修改安装文件绕过。</p></details>
+<details><summary>重启电脑 / Codex 后机器人不能用了</summary><p>打开 Codex，先停止旧桥接，在本项目聊天里让 Codex 重新执行 <code>npm run setup:codex</code> 和 <code>npm run doctor</code>，成功后再双击启动。自己的绑定记录会保留。</p></details>
+<details><summary>显示机器人已经运行，或者我开了多个启动窗口</summary><p>先双击“4-停止机器人.cmd”，等原运行窗口显示关闭后再启动一次。每个应用只运行一个本工具实例，避免多个实例分走手机消息。</p></details>
+<details><summary>找不到旧聊天 / 停机时发出的消息没有补处理</summary><p>列表检查最近 50 个非置顶本地聊天及全部置顶聊天，也会持续检查手动选过的聊天。旧聊天先在桌面打开或置顶，再发 <code>/会话</code>。重新启动会跳过停机期间的指令和旧通知，这是避免过时指令突然执行的设计。</p></details>
+<details><summary>提示指令可能已送达，或状态里出现待核对指令</summary><p>网络超时后不能确定 Codex 是否已收到指令，程序不会自动重发。先打开原聊天核对，再决定是否发送新指令。</p></details>
+<details><summary>帮助里有 /预览，我需要配置吗</summary><p>不用。这是后续小程序功能预留代码，真实项目尚未联调，不属于本次已验证能力。不用小程序时忽略它和 <code>WECHAT_…</code> 配置即可。</p></details>
+</section>
+
+<section id="privacy"><h2>哪些文件不能再转发给别人</h2>
+<p>本包只含代码、空白模板和说明。运行后，下列文件会包含你自己的数据：</p>
+<div class="table"><table><thead><tr><th>文件</th><th>内容</th></tr></thead><tbody>
+<tr><td><code>.env</code></td><td>你的飞书凭证。</td></tr>
+<tr><td><code>bridge.local.json</code></td><td>你这台电脑的 Codex 连接信息。</td></tr>
+<tr><td><code>.data/</code></td><td>绑定用户、手机指令、未送达结果和引用定位记录。</td></tr>
+<tr><td><code>*.log</code>、<code>.cache/</code>、<code>artifacts/</code></td><td>运行日志、缓存和生成文件。</td></tr>
+</tbody></table></div>
+<p><strong>再次分享时转发原始 ZIP，不要压缩自己运行过的整个文件夹。</strong>正常聊天内容经 Codex 处理；手机指令和被转发的最终答复还会经过飞书。运行目录应只由你信任的人访问。</p>
+<p class="muted">本版本固定依赖并附测试源码。已验证的是原电脑的文字收发流程；你的环境要按上述步骤自测。更详细的运行边界和维护者打包方式见同目录 README.md。</p>
+</section>
+
+<section><h2>官方参考</h2><ul>
+<li><a href="https://open.feishu.cn/app">飞书开发者后台</a></li>
+<li><a href="https://open.feishu.cn/document/server-docs/im-v1/message/events/receive">飞书：接收消息事件</a> · <a href="https://open.feishu.cn/document/server-docs/im-v1/message/create">发送消息</a></li>
+<li><a href="https://github.com/larksuite/node-sdk">飞书官方 Node.js SDK 与长连接</a></li>
+<li><a href="https://learn.chatgpt.com/docs/remote-connections">OpenAI：Codex Remote 连接与审批</a></li>
+</ul></section>
+<footer>Codex 手机助手 · v0.1.0 Windows 分享版<br>本说明可离线打开，不加载远程字体、图片或统计脚本。</footer>
+</main></body></html>
